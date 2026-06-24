@@ -3,11 +3,10 @@ export class HomePage {
     gotoCompanies() {
         cy.get('[data-test="manage-menu"]').eq(0).should('be.visible').click();
         cy.get('[data-test="companies-menu"]').eq(0).should('be.visible').click();
-        cy.url().should('include','/companies')
+        cy.url().should('include', '/companies')
         cy.get(':nth-child(1) > .w-full > .cursor-pointer').should('be.visible').click() //Close guide modal
         cy.get('h2').contains('General information').should('be.visible')
     }
-
     gotoUsers() {
         cy.get('[data-test="manage-menu"]').click();
         cy.get('[data-test="users-menu"]').contains('Users').click();

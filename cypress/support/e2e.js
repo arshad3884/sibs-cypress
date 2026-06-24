@@ -15,6 +15,7 @@
 
 // Import commands.js using ES2015 syntax:
 import './commands'
+import 'cypress-if'
 import { faker } from '@faker-js/faker';
 globalThis.faker = faker;
 
