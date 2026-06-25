@@ -10,6 +10,8 @@ on:
         type: choice
         options:
           - e2e
+          - load-3
+          - load-6
           - load-10
 
 jobs:
@@ -33,7 +35,15 @@ jobs:
           browser: chrome
           headed: true
 
-      - name: Run Load Test (10 Parallel Instances)
+      - name: Run Load Test 3 Users
+        if: github.event.inputs.test_type == 'load-3'
+        run: npm run load:3
+
+      - name: Run Load Test 6 Users
+        if: github.event.inputs.test_type == 'load-6'
+        run: npm run load:6
+
+      - name: Run Load Test 10 Users
         if: github.event.inputs.test_type == 'load-10'
         run: npm run load:10
 
@@ -41,7 +51,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: cypress-execution-report
+          name: cypress-execution-report-${{ github.event.inputs.test_type }}
           path: |
             cypress/reports/html
             cypress/screenshots
