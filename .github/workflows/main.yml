@@ -1,46 +1,50 @@
 name: CMORE SIBS e2e Test
 
 on:
-  # Manual Button Click from Github UI
   workflow_dispatch:
-  # Pushing commit to the master branch
-  # push:
-    # branches: master
-  #schedule:
-    # Runs tests every day at 1am
-    #- cron: '0 1 * * *'
 
 jobs:
-  cypress-run:
+  cypress-e2e:
     runs-on: ubuntu-latest
-    # Runs tests in parallel with matrix strategy https://docs.cypress.io/guides/guides/parallelization
-    # https://docs.github.com/en/actions/using-jobs/using-a-matrix-for-your-jobs
-    # Also see warning here https://github.com/cypress-io/github-action#parallel
-    strategy:
-      fail-fast: false # https://github.com/cypress-io/github-action/issues/48
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: e2e Test on Chrome 
-        # Uses the official Cypress GitHub action https://github.com/cypress-io/github-action
+
+      - name: e2e Test on Chrome
         uses: cypress-io/github-action@v6
         with:
           browser: chrome
           headed: true
-          # Records to Cypress Cloud
-          # https://docs.cypress.io/guides/cloud/projects#Set-up-a-project-to-record
-          #record: true
-          #parallel: true # Runs test in parallel using settings above
-        #env:
-          # For recording and parallelization to work you must set your CYPRESS_RECORD_KEY
-          # in GitHub repo → Settings → Secrets → Actions
-          #CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
-          # Creating a token https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token
-          #GITHUB_TOKEN: ${{ secrets.CIAN_TOKEN }}
-      - name: Uploading artifact
+
+      - name: Uploading e2e artifact
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: cypress-execution-report
+          name: cypress-e2e-report
           path: cypress/reports/html
+          retention-days: 7
+
+  cypress-load-10:
+    runs-on: ubuntu-latest
+    needs: cypress-e2e
+    if: always()
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run 10 parallel load simulation
+        run: npm run load:10
+
+      - name: Uploading load artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cypress-load-10-report
+          path: |
+            cypress/reports/html
+            cypress/screenshots
+            cypress/videos
           retention-days: 7
