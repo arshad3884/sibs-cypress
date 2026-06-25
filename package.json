@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "load:10": "concurrently -n U1,U2,U3,U4,U5,U6,U7,U8,U9,U10 -c blue,green,yellow,magenta,cyan,white,red,blue,green,yellow \"cypress run --browser chrome --headed --spec cypress/e2e/CompanyCreation.cy.js\" \"cypress run --browser chrome --headed --spec cypress/e2e/CompanyCreation.cy.js\" \"cypress run --browser chrome --headed --spec cypress/e2e/CompanyCreation.cy.js\" \"cypress run --browser chrome --headed --spec cypress/e2e/CompanyCreation.cy.js\" \"cypress run --browser chrome --headed --spec cypress/e2e/CompanyCreation.cy.js\" \"cypress run --browser chrome --headed --spec cypress/e2e/CompanyCreation.cy.js\" \"cypress run --browser chrome --headed --spec cypress/e2e/CompanyCreation.cy.js\" \"cypress run --browser chrome --headed --spec cypress/e2e/CompanyCreation.cy.js\" \"cypress run --browser chrome --headed --spec cypress/e2e/CompanyCreation.cy.js\" \"cypress run --browser chrome --headed --spec cypress/e2e/CompanyCreation.cy.js\""
   },
   "keywords": [],
   "author": "",
@@ -15,6 +15,8 @@
   },
   "devDependencies": {
     "@faker-js/faker": "^10.5.0",
-    "cypress-if": "^1.16.1"
+    "concurrently": "^10.0.3",
+    "cypress-if": "^1.16.1",
+    "cypress-mochawesome-reporter": "^4.0.2"
   }
 }

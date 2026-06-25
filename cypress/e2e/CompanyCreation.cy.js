@@ -22,7 +22,7 @@ describe("SIBS Company Creation", () => {
 
   it("Create a New company and complete Company Registration Questionnaire", () => {
     let tinNumber
-    companyName = faker.company.name()
+    companyName = 'Load Test '+ faker.company.name()
 
     companyPage.getTINnumber().then(number => {
       tinNumber = number
@@ -56,7 +56,6 @@ describe("SIBS Company Creation", () => {
       companyPage.clickFinish()
     })
   })
-
   it('Submit ESG - SIBS v2025 Questionnaire', () => {
     homePage.gotoCompanies()
     companyPage.gotoCompanyList()
@@ -415,5 +414,13 @@ describe("SIBS Company Creation", () => {
     questionPage.clickSubmit()
     cy.wait(10000)
     questionPage.clickViewReport()
+  })
+  it.skip('Submit GHG Calculator V1 Questionnaire', () => {
+    homePage.gotoCompanies()
+    companyPage.gotoCompanyList()
+    companyPage.gotoCompanyDetail(companyName)
+    //companyPage.gotoCompanyDetail('Zboncak - Herman')
+    companyPage.gotoAdditionalInfo()
+    companyPage.openQuestionnaire('GHG Calculator V1')
   })
 })

@@ -14,9 +14,9 @@ export class QuestionPage {
     validateActiveSection(sectionName) {
         cy.get('h2 .text-esg5').contains(sectionName).scrollIntoView().should('be.visible')
     }
-    clickViewReport(){
+    clickViewReport() {
         cy.get('.w-full > div.flex > div > .cursor-pointer').contains('View Report').should('be.visible').click()
-        cy.url().should('include','?report=true')
+        cy.url().should('include', '?report=true')
     }
     answerQuestion(description, type, answer, questionIndex = 0) {
         const normalizeType = type.toLowerCase().trim();
@@ -291,8 +291,7 @@ export class QuestionPage {
                     .clear({ force: true })
                     .type(option, { force: true });
 
-                cy.get('.ts-dropdown:visible .option')
-                    .contains(option, { matchCase: false })
+                cy.get('.ts-dropdown:visible .option').contains(option, { matchCase: false })
                     .click({ force: true });
 
                 cy.wrap($row)
