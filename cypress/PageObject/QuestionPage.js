@@ -233,9 +233,9 @@ export class QuestionPage {
 
             cy.get(questionSelector)
                 .find('.answer_type .ts-control input:visible')
-                .first()
+                .first().scrollIntoView()
                 .click({ force: true })
-                .clear({ force: true })
+                //.clear({ force: true })
                 .type(option, { force: true });
 
             cy.contains('.ts-dropdown:visible .option', option, { matchCase: false })
