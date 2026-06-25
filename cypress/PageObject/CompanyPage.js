@@ -1,3 +1,7 @@
+import { QuestionPage } from "../PageObject/QuestionPage";
+
+const questionPage = new QuestionPage()
+
 export class CompanyPage {
     gotoCompanyList() {
         cy.get('.company-list-button').should('be.visible').and('contain.text', 'List').click()
@@ -56,7 +60,7 @@ export class CompanyPage {
         if (company.mainNace) {
             cy.get('label[for="business_sector"]').should('be.visible').and('contain.text', 'Main nace').wait(500)
             cy.get('input[placeholder="Select the main business sector"]').scrollIntoView().should('be.visible').click().wait(500)
-            cy.get('.dropdown-active [id*="-ts-dropdown"] [role="option"]').contains(company.mainNace).click({ force: true })
+            cy.get('.dropdown-active [id*="-ts-dropdown"] [role="option"]').contains(company.mainNace).click({ force: true }).wait(500)
         }
 
         if (company.secondaryNaces?.length) {
@@ -146,217 +150,36 @@ export class CompanyPage {
     fillCompanyRegistrationQuestionnaire() {
         cy.get('a[href*="/questionnaires"]').contains('Questionnaire: Company Registration Questionnaire -v2025').should('be.visible')
         // cy.get('[id*="question-"] .question-description').contains(question1).should('be.visible').parents('.question_div').find('.answer_type')
-        this.answerQuestion('Is the company an issuer of securities?', 'radio', 'No');
-        this.answerQuestion(
+        questionPage.answerQuestion('Is the company an issuer of securities?', 'radio', 'No');
+        questionPage.answerQuestion(
             'State the number of employees in the company´s own workforce.',
             'number',
             250
         );
-        this.answerQuestion(
+        questionPage.answerQuestion(
             "State the company's Balance Sheet.",
             'currency/unit',
             { value: 25000000, unit: 'unit' }
         );
-        this.answerQuestion(
+        questionPage.answerQuestion(
             "State the Company's Overall Turnover.",
             'currency/unit',
             { value: 5000000, unit: 'unit' }
         );
-        this.answerQuestion(
+        questionPage.answerQuestion(
             'State the Tax Identification Numbers (NIPC) of the subsidiaries included in the ESG consolidation scope for this reporting period',
             'text',
             { notApplicable: true }
         );
-        this.answerQuestion("Has the company conducted a materiality analysis?", 'radio', 'No');
+        questionPage.answerQuestion("Has the company conducted a materiality analysis?", 'radio', 'No');
 
-        this.answerQuestion(
+        questionPage.answerQuestion(
             'List the issues on which the company considers its activities to have an actual or potential negative impact on people and the environment.',
             'checkboxes',
             ['E1 - Climate Change', 'E2 - Pollution', 'E3 - Water and Marine Resources', 'E4 - Biodiversity and Ecosystems', 'E5 - Circular Economy', 'S1 - Own Labour', 'S2 - Workers in the Value Chain', 'S3 - Affected Communities', 'S4 - Consumers and End Users', 'G1 - Governance']
         );
-        this.answerQuestion("Does the company monitor its Scope 1, 2 and 3 greenhouse gas emissions?", 'radio', 'No'); // if we set No, GHG calculator will be be enabled 
+        questionPage.answerQuestion("Does the company monitor its Scope 1, 2 and 3 greenhouse gas emissions?", 'radio', 'No'); // if we set No, GHG calculator will be be enabled 
         cy.get('[id="company-btn-move"]').should('be.visible').and('contain.text', 'Next').click()
-    }
-    answerQuestion(description, type, answer) {
-        const normalizeType = type.toLowerCase().trim();
-
-        cy.contains('[id*="question-"] .question-description p .question_title', description)
-            .should('be.visible')
-            .parents('.question_div')
-            .first()
-            .then(($question) => {
-                const questionId = $question.attr('data-question-id');
-                const questionSelector = `.question_div[data-question-id="${questionId}"]`;
-
-                cy.get(questionSelector)
-                    .scrollIntoView()
-                    .should('be.visible');
-
-                if (typeof answer === 'object' && !Array.isArray(answer)) {
-                    if (answer.notApplicable === true) {
-                        cy.get(questionSelector)
-                            .contains('label', 'Question not applicable')
-                            .invoke('attr', 'for')
-                            .then((forId) => {
-                                cy.get(`#${forId}`)
-                                    .check({ force: true })
-                                    .should('be.checked');
-                            });
-                        return;
-                    }
-
-                    if (answer.companyDoesNotReport === true) {
-                        cy.get(questionSelector)
-                            .contains('label', 'Company does not report')
-                            .invoke('attr', 'for')
-                            .then((forId) => {
-                                cy.get(`#${forId}`)
-                                    .check({ force: true })
-                                    .should('be.checked');
-                            });
-                        return;
-                    }
-                }
-
-                switch (normalizeType) {
-                    case 'radio':
-                    case 'yes/no':
-                    case 'binary':
-                        cy.get(questionSelector)
-                            .contains('label, span', new RegExp(`^\\s*${answer}\\s*$`, 'i'))
-                            .click({ force: true });
-                        break;
-
-                    case 'number':
-                    case 'integer':
-                        cy.get(questionSelector)
-                            .find('.answer_type input:visible')
-                            .first()
-                            .clear({ force: true })
-                            .type(answer.toString(), { force: true })
-                            .should('have.value', answer.toString());
-                        break;
-
-                    case 'text':
-                    case 'text input':
-                    case 'text-long':
-                    case 'textarea': {
-                        const textValue = typeof answer === 'object' ? answer.value : answer;
-
-                        cy.get(questionSelector)
-                            .find('.answer_type textarea:visible, .answer_type input[type="text"]:visible')
-                            .first()
-                            .clear({ force: true })
-                            .type(textValue, { force: true })
-                            .should('have.value', textValue);
-                        break;
-                    }
-
-                    case 'currency':
-                    case 'unit':
-                    case 'currency/unit':
-                    case 'decimal':
-                        cy.get(questionSelector)
-                            .find('.answer_type input:visible')
-                            .first()
-                            .clear({ force: true })
-                            .type(answer.value.toString(), { force: true });
-
-                        if (answer.unit && answer.unit.toLowerCase() !== 'unit') {
-                            this.selectTomSelectOption(questionSelector, answer.unit);
-                        }
-                        break;
-
-                    case 'checkbox':
-                    case 'checkboxes':
-                    case 'multiselect checkboxes':
-                        cy.get(questionSelector).then(($q) => {
-                            const hasHiddenDropdown = $q.find('.checkboxDropDownContainer').length > 0;
-                            const hasDropdownTrigger = $q.find('.checkboxDropDown').length > 0;
-                            const isDropdownClosed =
-                                hasHiddenDropdown ||
-                                $q.find('.checkboxDropDown').text().toLowerCase().includes('click to select') ||
-                                $q.find('.checkboxDropDown').text().toLowerCase().includes('option selected');
-
-                            if (hasDropdownTrigger && isDropdownClosed) {
-                                this.selectCheckboxDropdownOptions(questionSelector, answer);
-                            } else {
-                                this.selectCheckboxOptions(questionSelector, answer);
-                            }
-                        });
-                        break;
-
-                    case 'countries':
-                    case 'country':
-                    case 'tomselect':
-                    case 'tom select':
-                        answer.forEach((option) => {
-                            this.selectTomSelectOption(questionSelector, option);
-                        });
-                        break;
-
-                    default:
-                        throw new Error(`Unsupported question type: ${type}`);
-                }
-            });
-    }
-
-    selectCheckboxOptions(questionSelector, options) {
-        options.forEach((option) => {
-            cy.get(questionSelector)
-                .contains('.answer_type label', option, { matchCase: false })
-                .should('be.visible')
-                .find('input[type="checkbox"]')
-                .check({ force: true })
-                .should('be.checked').wait(1000)
-        });
-    }
-
-    selectCheckboxDropdownOptions(questionSelector, options) {
-        cy.get(questionSelector)
-            .find('.checkboxDropDown')
-            .scrollIntoView()
-            .click({ force: true });
-
-        options.forEach((option) => {
-            cy.get(questionSelector)
-                .contains(
-                    '.checkboxDropDownContainer label, .checkboxDropDown label, .answer_type label',
-                    option,
-                    { matchCase: false }
-                )
-                .find('input[type="checkbox"]')
-                .check({ force: true })
-                .should('be.checked');
-        });
-    }
-
-    selectTomSelectOption(questionSelector, option) {
-        cy.get(questionSelector).then(($question) => {
-            const alreadySelected = [...$question.find('.ts-control .item')]
-                .some((el) => el.innerText.replace('×', '').trim().toLowerCase() === option.toLowerCase());
-
-            if (alreadySelected) {
-                cy.log(`${option} already selected - skipping`);
-                return;
-            }
-
-            cy.get(questionSelector)
-                .find('.answer_type .ts-control input:visible')
-                .first()
-                .click({ force: true })
-                .clear({ force: true })
-                .type(option, { force: true });
-
-            cy.contains('.ts-dropdown:visible .option', option, { matchCase: false })
-                .click({ force: true });
-
-            cy.get(questionSelector)
-                .find('.ts-control .item')
-                .should('contain.text', option);
-
-            cy.get('body').click(0, 0, { force: true });
-        });
     }
     openQuestionnaire(questionName) {
         cy.contains('tr', questionName)
