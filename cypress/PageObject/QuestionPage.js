@@ -14,9 +14,9 @@ export class QuestionPage {
     refreshAndConfirmSubmission(qustionName) {
         cy.get('.w-full > .text-esg5').should('be.visible').and('contain.text', qustionName)
         cy.get('.w-full.text-center').should('be.visible').and('contain.text', 'We are processing the questionnaire, please wait a few seconds and refresh the page')
-        cy.contains('a', 'Refresh').should('be.visible').wait(8000).click()
+        cy.contains('a', 'Refresh').should('be.visible').wait(8000).click().wait(3000)
         cy.contains('a', 'Refresh').if().should('be.visible').wait(5000).click()
-        cy.get('.mt-16 > .text-lg').should('contain.text', 'Your questionnaire was submitted!').and('be.visible')
+        cy.contains('Your questionnaire was submitted!').and('be.visible')
     }
     validateActiveSection(sectionName) {
         cy.get('h2 .text-esg5').contains(sectionName).scrollIntoView().should('be.visible')
@@ -494,5 +494,10 @@ export class QuestionPage {
     }
     validateCurrentGHGSection(sectionNo) {
         cy.get('a .drop-shadow').eq(sectionNo - 1).should('have.class', 'border-esg5') //should be selected
+    }
+    //Taxonomy
+    gotoVerifyLink(sectionName){
+        cy.get('.accordion-header .text-base').contains(sectionName).parents('.accordion-item').find('.accordion-button').click()
+        cy.get('.accordion-header .text-base').contains(sectionName).parents('.accordion-item').find('button[type="button"]').contains('Verify').click()
     }
 }

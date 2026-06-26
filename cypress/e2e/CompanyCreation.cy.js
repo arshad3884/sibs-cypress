@@ -683,6 +683,7 @@ describe("SIBS Company Creation", () => {
     companyPage.gotoCompanyDetail('Load Test Streich - Champlin')
     companyPage.gotoAdditionalInfo()
     companyPage.openQuestionnaire(questionName)
+    questionPage.gotoVerifyLink('Specific verification for nuclear energy and fossil gas-related activities')
 
   })
 })
