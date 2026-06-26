@@ -57,11 +57,12 @@ describe("SIBS Company Creation", () => {
     })
   })
   it('Submit ESG - SIBS v2025 Questionnaire', () => {
+    let questioName = 'Questionnaire ESG - SIBS v2025'
     homePage.gotoCompanies()
     companyPage.gotoCompanyList()
     companyPage.gotoCompanyDetail(companyName)
     companyPage.gotoAdditionalInfo()
-    companyPage.openQuestionnaire('Questionnaire ESG - SIBS v2025')
+    companyPage.openQuestionnaire(questioName)
     questionPage.validateActiveSection('General Info')
     //1
     questionPage.answerQuestion(
@@ -418,7 +419,7 @@ describe("SIBS Company Creation", () => {
     let questionName = 'GHG Calculator V1'
     homePage.gotoCompanies()
     companyPage.gotoCompanyList()
-    companyPage.gotoCompanyDetail('Load Test Graham, Denesik and')
+    companyPage.gotoCompanyDetail(companyName)
     companyPage.gotoAdditionalInfo()
     companyPage.openQuestionnaire(questionName)
     //****************/
