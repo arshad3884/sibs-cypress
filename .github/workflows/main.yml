@@ -15,43 +15,52 @@ on:
           - load-10
 
 jobs:
-  cypress-run:
+  # Build the list of simulated users based on the selected test type.
+  # Each entry becomes a separate parallel job (one runner = one browser),
+  # which is what a real concurrent-user load test needs. Cramming many
+  # browsers onto a single runner starves CPU/RAM and produces
+  # "The browser never connected" + cascading timeouts.
+  prepare:
     runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Compute user matrix
+        id: set-matrix
+        run: |
+          case "${{ github.event.inputs.test_type }}" in
+            e2e)     echo 'matrix=[1]' >> "$GITHUB_OUTPUT" ;;
+            load-3)  echo 'matrix=[1,2,3]' >> "$GITHUB_OUTPUT" ;;
+            load-6)  echo 'matrix=[1,2,3,4,5,6]' >> "$GITHUB_OUTPUT" ;;
+            load-10) echo 'matrix=[1,2,3,4,5,6,7,8,9,10]' >> "$GITHUB_OUTPUT" ;;
+            *)       echo 'matrix=[1]' >> "$GITHUB_OUTPUT" ;;
+          esac
 
+  cypress-run:
+    needs: prepare
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
+      # One job per simulated user -> one dedicated runner each.
+      matrix:
+        user: ${{ fromJSON(needs.prepare.outputs.matrix) }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run E2E Tests
-        if: github.event.inputs.test_type == 'e2e'
+      - name: Run Cypress (User ${{ matrix.user }})
         uses: cypress-io/github-action@v6
         with:
           browser: chrome
           headed: true
-
-      - name: Run Load Test 3 Users
-        if: github.event.inputs.test_type == 'load-3'
-        run: npm run load:3
-
-      - name: Run Load Test 6 Users
-        if: github.event.inputs.test_type == 'load-6'
-        run: npm run load:6
-
-      - name: Run Load Test 10 Users
-        if: github.event.inputs.test_type == 'load-10'
-        run: npm run load:10
+          spec: cypress/e2e/CompanyCreation.cy.js
 
       - name: Uploading artifact
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: cypress-execution-report-${{ github.event.inputs.test_type }}
+          name: cypress-execution-report-${{ github.event.inputs.test_type }}-user-${{ matrix.user }}
           path: |
             cypress/reports/html
             cypress/screenshots
