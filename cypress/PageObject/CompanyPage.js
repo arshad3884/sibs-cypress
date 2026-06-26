@@ -238,17 +238,15 @@ export class CompanyPage {
         cy.get('[id="company-btn-move"]').should('be.visible').and('contain.text', 'Next').click()
     }
     openQuestionnaire(questionName) {
-        cy.contains('tr', questionName)
-            .should('be.visible')
-            .within(() => {
-                cy.get('a[href*="/questionnaires/"]')
-                    .filter(':visible')
-                    .first()
-                    .click({ force: true });
-            })
+        cy.contains('tr', questionName).should('be.visible').within(() => {
+            cy.get('a[href*="/questionnaires/"]')
+                .filter(':visible')
+                .first()
+                .click({ force: true });
+        })
 
-        cy.url().should('include', '/questionnaires/')
-        cy.contains('.grid.content-start .text-esg5', questionName).should('be.visible')
+        cy.url().should('include', '/questionnaires/').wait(2000)
+        cy.get('[aria-label="Breadcrumb"]').contains(questionName).should('be.visible')
         //If modal appears
         cy.wait(3000)
         cy.get('.p-6').if().then(() => {
@@ -256,5 +254,27 @@ export class CompanyPage {
             cy.get('a[text="Start Now!"]').should('be.visible').click()
         })
 
+    }
+    deleteCompany(companyName) {
+        cy.get('[id*="_tooltip_company"] a[href*="/companies/"]')
+            .contains(companyName)
+            .parents('.company-list-card')
+            .find('button[modal="companies.modals.delete"]')
+            .scrollIntoView()
+            .should('be.visible')
+            .click({ force: true });
+
+        cy.get('#modal-container').should('be.visible');
+        cy.get('#modal-container #modal-headline').should('be.visible').and('contain.text', 'Delete a company');
+
+        cy.get('#modal-container')
+            .should('contain.text', `You're about to delete company`)
+            .and('contain.text', companyName)
+            .and('contain.text', `and all content related to it.`)
+            .and('contain.text', `Be advised that deleted items are stored in the system database`);
+
+        cy.get('#modal-container .btn-cancel').should('be.visible').and('contain.text', 'Cancel');
+        cy.get('#modal-container .btn-danger').should('be.visible').and('contain.text', 'Delete').click({ force: true });
+        cy.verifyToast('Company deleted successfully')
     }
 }

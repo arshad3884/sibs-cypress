@@ -22,7 +22,7 @@ describe("SIBS Company Creation", () => {
 
   it("Create a New company and complete Company Registration Questionnaire", () => {
     let tinNumber
-    companyName = 'Load Test '+ faker.company.name()
+    companyName = 'Load Test ' + faker.company.name()
 
     companyPage.getTINnumber().then(number => {
       tinNumber = number
@@ -60,7 +60,6 @@ describe("SIBS Company Creation", () => {
     homePage.gotoCompanies()
     companyPage.gotoCompanyList()
     companyPage.gotoCompanyDetail(companyName)
-    //companyPage.gotoCompanyDetail('Zboncak - Herman')
     companyPage.gotoAdditionalInfo()
     companyPage.openQuestionnaire('Questionnaire ESG - SIBS v2025')
     questionPage.validateActiveSection('General Info')
@@ -415,12 +414,265 @@ describe("SIBS Company Creation", () => {
     cy.wait(10000)
     questionPage.clickViewReport()
   })
-  it.skip('Submit GHG Calculator V1 Questionnaire', () => {
+  it('Submit GHG Calculator V1 Questionnaire', () => {
+    let questionName = 'GHG Calculator V1'
     homePage.gotoCompanies()
     companyPage.gotoCompanyList()
-    companyPage.gotoCompanyDetail(companyName)
-    //companyPage.gotoCompanyDetail('Zboncak - Herman')
+    companyPage.gotoCompanyDetail('Load Test Graham, Denesik and')
     companyPage.gotoAdditionalInfo()
-    companyPage.openQuestionnaire('GHG Calculator V1')
+    companyPage.openQuestionnaire(questionName)
+    //****************/
+    //1st segment
+    //****************/
+    questionPage.validateCurrentGHGSection(1) //1st Section
+    questionPage.answerQuestion(
+      'During the reporting period, did the undertaking consume fuel in its own operations within its infrastructure or stationary equipment?',
+      'radio',
+      'No'
+    )
+    //1
+    questionPage.clickNext()
+
+    questionPage.validateCurrentGHGSection(2) //2nd Section
+    //1
+    questionPage.answerQuestion(
+      'Are the undertaking’s premises located in areas where energy customers have access to product- or supplier-specific data?',
+      'radio',
+      'No'
+    )
+    //2
+    questionPage.answerQuestion(
+      'During the reporting period, did the undertaking produce renewable energy?',
+      'radio',
+      'No'
+    )
+    //3
+    questionPage.answerQuestion(
+      'During the reporting period, did the undertaking acquire energy externally?',
+      'radio',
+      'No'
+    )
+    questionPage.clickNext()
+
+    questionPage.validateCurrentGHGSection(3) //3rd Section
+    //1
+    questionPage.answerQuestion(
+      `Are refrigerant gases (commonly fluorinated greenhouse gases) used in equipment within the undertaking's operations?`,
+      'radio',
+      'No'
+    )
+    //2
+    questionPage.answerQuestion(
+      `During the reporting period, did any industrial processes occur on the undertaking's own operations that involve the release of gases such as Carbon Dioxide (CO₂), Methane (CH4), Nitrous Oxide (N₂O), Sulphur Hexafluoride (SF6), Nitrogen Trifluoride (NF3), Hydrofluorocarbons (HFCs) or Perfluorocarbons (PFCs)?`,
+      'radio',
+      'No'
+    )
+    questionPage.clickNext()
+
+    questionPage.validateCurrentGHGSection(4) //4th Section
+    // 1
+    questionPage.answerQuestion(
+      `During the reporting period, were journeys undertaken in combustion vehicles owned, controlled, or operated (including leasing) by the undertaking?`,
+      'radio',
+      'No'
+    )
+    //2
+    questionPage.answerQuestion(
+      `During the reporting, did the undertaking operate any other combustion mobile sources, such as heavy machinery (e.g., construction or agricultural equipment)?`,
+      'radio',
+      'No'
+    )
+    //3
+    questionPage.answerQuestion(
+      `During the reporting period, were journeys undertaken in electric vehicles owned, controlled, or operated (including leased) by the undertaking?`,
+      'radio',
+      'Yes'
+    )
+    //3.1
+    questionPage.answerQuestion(
+      `Are these electric vehicles primarily charged outside the undertaking's premises, and can you confirm that their electricity consumption has not been reported in previous questions?`,
+      'radio',
+      'No'
+    )
+    //4
+    questionPage.answerQuestion(
+      `During the reporting period, did workers work remotely or commute using vehicles not owned by the undertaking?`,
+      'radio',
+      'No'
+    )
+    //5
+    questionPage.answerQuestion(
+      `During the reporting period, did the undertaking's employees undertake business trips using vehicles not owned by the undertaking?`,
+      'radio',
+      'No'
+    )
+    questionPage.clickNext()
+
+    questionPage.validateCurrentGHGSection(5) //5th Section
+    questionPage.answerQuestion(
+      `During the reporting period, was any waste produced in the undertaking's own operations and sent for third-party treatment?`,
+      'radio',
+      'No'
+    )
+    questionPage.clickNext()
+
+    questionPage.validateCurrentGHGSection(6) //6th Section
+    questionPage.answerQuestion(
+      `During the reporting period, was water used on the undertaking's own operations?`,
+      'radio',
+      'No'
+    )
+    questionPage.clickNext()
+    //****************/
+    //2nd segment
+    //****************/
+    //1
+    questionPage.answerQuestion(
+      `During the reporting period, did the undertaking purchase or subcontract any transport and distribution services? (This includes inbound and outbound logistics and/or logistics within the undertaking's premises, using vehicles not owned by the it)`,
+      'radio',
+      'No'
+    )
+    //2
+    questionPage.answerQuestion(
+      `Does the undertaking have direct suppliers (Tier 1) whose transport and distribution costs for purchased goods were not covered in the previous question?`,
+      'radio',
+      'Yes'
+    )
+    //2.1
+    questionPage.answerQuestion(
+      `Can the undertaking provide an estimate of the distance or cost involved in transporting these products from the supplier to the undertaking's premises?`,
+      'radio',
+      'No'
+    )
+    //3
+    questionPage.answerQuestion(
+      `Is there a third-party storage facility involved in the transport and distribution processes for either the undertaking's upstream or downstream products?`,
+      'radio',
+      'Yes'
+    )
+    //3.1
+    questionPage.answerQuestion(
+      `Is the storage facility located off-site from the undertaking’s premises?`,
+      'radio',
+      'No'
+    )
+    questionPage.clickNext()
+    //****************/
+    //3rd Segment
+    //****************/
+    //1
+    questionPage.answerQuestion(
+      `During the reporting period, the undertaking purchase capital goods?`,
+      'radio',
+      'No'
+    )
+    //2
+    questionPage.answerQuestion(
+      `During the reporting period, did the undertaking purchase services?`,
+      'radio',
+      'No'
+    )
+    //3
+    questionPage.answerQuestion(
+      `During the reporting period, did the undertaking purchase goods?`,
+      'radio',
+      'No'
+    )
+    questionPage.clickNext()
+    //****************/
+    //4th Segment
+    //****************/
+    //1
+    questionPage.answerQuestion(
+      `During the reporting period, did the undertaking sell goods?`,
+      'radio',
+      'Yes'
+    )
+    //1.1
+    questionPage.answerQuestion(
+      `Considering the materials used to produce or package the goods sold by the undertaking, select the material(s) from the list that best correspond to those used and specify the corresponding quantities. Additionally, select the most likely final destination based on the consumer's typical disposal behaviour. If the question is not applicable, mark as "Not Applicable"`,
+      'checkbox',
+      ['Batteries waste - Landfill']
+    )
+    //Batteries waste - Landfill
+    questionPage.addValue(
+      'Batteries waste - Landfill',
+      200,
+      'kg'
+    )
+    //1.2
+    questionPage.answerQuestion(
+      `For goods sold, where the transport and distribution services to their final destination are not covered by the undertaking, can an estimate be provided for the transport and distribution activities involved?`,
+      'radio',
+      'No'
+    )
+    //1.3
+    questionPage.answerQuestion(
+      `Did the undertaking sell goods that, when used, result in the direct consumption of fuels, electricity, or refrigeration gases?`,
+      'radio',
+      'No'
+    )
+    //1.4
+    questionPage.answerQuestion(
+      `During the reporting period, did the undertaking sell products that require additional processing by third parties?`,
+      'radio',
+      'No'
+    )
+    questionPage.clickNext()
+    //****************/
+    //5th Segment
+    //****************/
+    //1
+    questionPage.answerQuestion(
+      `During the reporting period, did the undertaking lease assets (of which it is the lessor) which have not yet been included in previous questions?`,
+      'radio',
+      'Yes'
+    )
+    //1.2
+    questionPage.answerQuestion(
+      `Can the undertaking provide the total amount of emissions (scope 1 and 2) associated with the asset(s) in the reporting period?`,
+      'radio',
+      'No',
+      0 //questionIndex
+    )
+    //2
+    questionPage.answerQuestion(
+      `During the reporting period, did the undertaking have leased assets (of which it is the lessee) which have not yet been included in the previous questions?`,
+      'radio',
+      'Yes'
+    )
+    //2.1
+    questionPage.answerQuestion(
+      `Can the undertaking provide the total amount of emissions (scope 1 and 2) associated with the asset(s) in the reporting period?`,
+      'radio',
+      'No',
+      1 //questionIndex
+    )
+    //3
+    questionPage.answerQuestion(
+      `During the reporting period, did the undertaking grant any license or permission to a franchise whose data was not included in the previous questions?`,
+      'radio',
+      'Yes'
+    )
+    //3.1
+    questionPage.answerQuestion(
+      `Can the undertaking provide the total amount of emissions (scope 1 and 2) associated with the franchisee(s) in the reporting period?`,
+      'radio',
+      'No'
+    )
+    //4
+    questionPage.answerQuestion(
+      `During the reporting period, did the undertaking make investments in other companies?`,
+      'radio',
+      'Yes'
+    )
+    //4.1
+    questionPage.answerQuestion(
+      `Can the undertaking provide the total amount of emissions associated with the investment(s) in the reporting period?`,
+      'radio',
+      'No'
+    )
+    questionPage.clickSubmit()
+    questionPage.refreshAndConfirmSubmission(questionName)
   })
 })
