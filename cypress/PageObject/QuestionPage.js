@@ -222,24 +222,79 @@ export class QuestionPage {
         cy.get('body').click(0, 0, { force: true });
     }
     selectTomSelectOption(questionSelector, option) {
+        const matchesOption = (el) =>
+            el.innerText
+                .replace('×', '')
+                .replace(/\u00a0/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim()
+                .toLowerCase()
+                .includes(option.toLowerCase());
+
         cy.get(questionSelector).then(($question) => {
-            const alreadySelected = [...$question.find('.ts-control .item')]
-                .some((el) => el.innerText.replace('×', '').trim().toLowerCase() === option.toLowerCase());
+            const alreadySelected = [...$question.find('.ts-control .item')].some(matchesOption);
 
             if (alreadySelected) {
                 cy.log(`${option} already selected - skipping`);
                 return;
             }
 
+            // The country TomSelect is rendered/refreshed by Livewire while typing. The remote
+            // search re-morphs the DOM, which (a) can detach the input mid-type if we type with a
+            // per-char delay and (b) can close the dropdown before the option is clicked, leaving
+            // Cypress retrying against a dropdown that never re-opens on slower (CI) runs.
+            // Strategy: focus + type fast (re-querying each command so we never act on a detached
+            // element), let Livewire settle, then ensure the dropdown is open before selecting.
+
+            // focus / open the control
             cy.get(questionSelector)
                 .find('.answer_type .ts-control input:visible')
-                .first().scrollIntoView()
-                .click({ force: true })
-                //.clear({ force: true })
+                .first()
+                .scrollIntoView()
+                .click({ force: true });
+
+            // type the search term fast (no per-char delay) so every char lands before Livewire
+            // morphs the input out from under us
+            cy.get(questionSelector)
+                .find('.answer_type .ts-control input:visible')
+                .first()
                 .type(option, { force: true });
 
-            cy.contains('.ts-dropdown:visible .option', option, { matchCase: false })
-                .click({ force: true });
+            // allow Livewire to fetch + re-render the matching remote options
+            cy.wait(2500);
+
+            // The morph may have closed the dropdown; re-open it (search term is retained) until the
+            // option is actually rendered, then click it.
+            const ensureDropdownAndSelect = (attemptsLeft) => {
+                cy.get('body').then(($body) => {
+                    const optionReady = [...$body.find('.ts-dropdown:visible .option')].some(matchesOption);
+
+                    if (optionReady) {
+                        cy.contains('.ts-dropdown:visible .option', option, { matchCase: false })
+                            .first()
+                            .scrollIntoView()
+                            .click({ force: true });
+                        return;
+                    }
+
+                    if (attemptsLeft <= 1) {
+                        // last attempt: surface the original, meaningful assertion error
+                        cy.contains('.ts-dropdown:visible .option', option, { matchCase: false })
+                            .click({ force: true });
+                        return;
+                    }
+
+                    cy.log(`Dropdown option "${option}" not ready - re-opening`);
+                    cy.get(questionSelector)
+                        .find('.answer_type .ts-control')
+                        .first()
+                        .click({ force: true });
+                    cy.wait(1500);
+                    ensureDropdownAndSelect(attemptsLeft - 1);
+                });
+            };
+
+            ensureDropdownAndSelect(5);
 
             cy.get(questionSelector)
                 .find('.ts-control .item')
