@@ -247,12 +247,22 @@ export class CompanyPage {
 
         cy.url().should('include', '/questionnaires/').wait(2000)
         cy.get('[aria-label="Breadcrumb"]').contains(questionName).should('be.visible')
-        //If modal appears
+        //If modal appears for GHG and ESG Questionnaire
         cy.wait(3000)
         cy.get('.p-6').if().then(() => {
             cy.get('.p-6').should('be.visible').and('contain.text', 'Welcome! You’re at the start of our questionnaire and we’re glad to have you here!')
             cy.get('a[text="Start Now!"]').should('be.visible').click()
         })
+        //For Taxonomy
+        if (questionName == 'Taxonomy') {
+            cy.get('.accordion-container')
+                .should('be.visible')
+                .and('contain.text', 'What is it?')
+                .and('contain.text', 'Perform a new exercise or import an exercise?')
+                .and('contain.text', 'What if my activities are not included in the taxonomy?');
+
+            cy.contains('.justify-center button[type="button"]', 'Start').should('be.visible').and('be.enabled').click().wait(3000)
+        }
 
     }
     deleteCompany(companyName) {

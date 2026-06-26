@@ -13,7 +13,9 @@ export class QuestionPage {
     }
     refreshAndConfirmSubmission(qustionName) {
         cy.get('.w-full > .text-esg5').should('be.visible').and('contain.text', qustionName)
-        cy.get('.mt-10 > .inline').should('contain.text', 'Refresh').wait(10000).click()
+        cy.get('.w-full.text-center').should('be.visible').and('contain.text', 'We are processing the questionnaire, please wait a few seconds and refresh the page')
+        cy.contains('a', 'Refresh').should('be.visible').wait(8000).click()
+        cy.contains('a', 'Refresh').if().should('be.visible').wait(5000).click()
         cy.get('.mt-16 > .text-lg').should('contain.text', 'Your questionnaire was submitted!').and('be.visible')
     }
     validateActiveSection(sectionName) {

@@ -676,4 +676,13 @@ describe("SIBS Company Creation", () => {
     questionPage.clickSubmit()
     questionPage.refreshAndConfirmSubmission(questionName)
   })
+  it('Submit Taxonomy Questionnaire', () => {
+    let questionName = 'Taxonomy'
+    homePage.gotoCompanies()
+    companyPage.gotoCompanyList()
+    companyPage.gotoCompanyDetail('Load Test Streich - Champlin')
+    companyPage.gotoAdditionalInfo()
+    companyPage.openQuestionnaire(questionName)
+    
+  })
 })
