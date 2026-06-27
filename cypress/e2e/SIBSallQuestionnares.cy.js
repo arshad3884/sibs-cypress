@@ -10,7 +10,7 @@ const homePage = new HomePage()
 const companyPage = new CompanyPage()
 const questionPage = new QuestionPage()
 
-describe("SIBS Company Creation", () => {
+describe("SIBS Company Creation and All questions submission", () => {
   const foundationTest = 'Create a New company and complete Company Registration Questionnaire'
   let companyName
   let skipRemainingTests = false

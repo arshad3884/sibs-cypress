@@ -19,12 +19,27 @@ export class QuestionPage {
     refreshAndConfirmSubmission(questionName) {
         cy.get('.w-full > .text-esg5').should('be.visible').and('contain.text', questionName)
         cy.get('.w-full.text-center').should('be.visible').and('contain.text', 'We are processing the questionnaire, please wait a few seconds and refresh the page')
-        // Wait first, THEN re-query the link fresh so Livewire's re-render can't detach
-        // the element mid-chain (cause of the "page updated as a result of this command" error)
-        cy.wait(15000)
-        cy.get('a:contains("Refresh")').should('be.visible').click().wait(1000)
+
+        // Processing can take several minutes (esp. GHG), needing many refresh cycles. Each
+        // Refresh click is a full page load; keep refreshing until the "Refresh" link is gone
+        // (i.e. processing finished). Re-query fresh each time to avoid detached-element errors.
+        const refreshUntilDone = (attemptsLeft) => {
+            cy.get('body').then(($body) => {
+                if (!$body.find('a:contains("Refresh")').length) {
+                    return // processing finished, link gone
+                }
+                cy.wait(15000)
+                cy.get('a:contains("Refresh")').if('visible').click()
+                cy.wait(3000)
+                if (attemptsLeft > 0) {
+                    refreshUntilDone(attemptsLeft - 1)
+                }
+            })
+        }
+        refreshUntilDone(15)
+
         if (questionName.includes('GHG Calculator')) {
-            cy.contains('Your questionnaire was submitted!').should('be.visible')
+            cy.contains('Your questionnaire was submitted!', { timeout: 20000 }).should('be.visible')
         }
     }
     validateActiveSection(sectionName) {
@@ -816,9 +831,11 @@ export class QuestionPage {
         const contingencyValue = contingencyPlan.toLowerCase() === 'yes' ? '1' : '0'
         const continuityValue = continuityPlan.toLowerCase() === 'yes' ? '1' : '0'
 
-        cy.get('#modal-container').should('be.visible').within(() => {
-            cy.contains('h3', 'Contingency Plan').should('be.visible')
+        // Wait for the modal's inner heading rather than #modal-container itself: the container
+        // animates open (x-transition) and is momentarily 672x0, which fails be.visible.
+        cy.contains('h3', 'Contingency Plan', { timeout: 20000 }).should('be.visible')
 
+        cy.get('#modal-container').within(() => {
             cy.get(`input[name="risk.has_contingency_plan"][value="${contingencyValue}"]`)
                 .check({ force: true })
             cy.wait(1000)
