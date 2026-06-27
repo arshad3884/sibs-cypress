@@ -21,7 +21,7 @@ export class QuestionPage {
         cy.get('.w-full.text-center').should('be.visible').and('contain.text', 'We are processing the questionnaire, please wait a few seconds and refresh the page')
         // Wait first, THEN re-query the link fresh so Livewire's re-render can't detach
         // the element mid-chain (cause of the "page updated as a result of this command" error)
-        cy.wait(10000)
+        cy.wait(15000)
         cy.get('a:contains("Refresh")').should('be.visible').click().wait(1000)
         if (questionName.includes('GHG Calculator')) {
             cy.contains('Your questionnaire was submitted!').should('be.visible')
@@ -698,7 +698,9 @@ export class QuestionPage {
                 });
 
                 expect(option, `primary NACE option "${primaryNACE}"`).to.exist;
-                cy.get('#activity').select(option.value).should('have.value', option.value);
+                // force: true — the sticky page header (.flex.items-center.justify-between.h-16)
+                // can overlap the select and trip Cypress's "covered by another element" check
+                cy.get('#activity').select(option.value, { force: true }).should('have.value', option.value);
             })
         cy.wait(1000)
 

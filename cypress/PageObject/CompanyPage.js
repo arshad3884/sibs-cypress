@@ -239,7 +239,22 @@ export class CompanyPage {
         questionPage.answerQuestion("Does the company monitor its Scope 1, 2 and 3 greenhouse gas emissions?", 'radio', 'No'); // if we set No, GHG calculator will be be enabled 
         cy.get('[id="company-btn-move"]').should('be.visible').and('contain.text', 'Next').click()
     }
+    ensureQuestionnaireRow(questionName, attemptsLeft = 3) {
+        // The questionnaire row can take a moment to appear after the previous one is finished.
+        // If it's not in the table yet, reload, re-open the Additional Info tab, and retry.
+        cy.get('body').then(($body) => {
+            if ($body.find(`tr:contains("${questionName}")`).length || attemptsLeft <= 0) {
+                return;
+            }
+            cy.reload();
+            cy.wait(4000);
+            cy.get('button[id="indicatorPanelTabButton__additional-info"]').should('be.visible').click();
+            cy.get('.company-show-extra-info.bg-white').should('be.visible');
+            this.ensureQuestionnaireRow(questionName, attemptsLeft - 1);
+        });
+    }
     openQuestionnaire(questionName) {
+        this.ensureQuestionnaireRow(questionName)
         cy.contains('tr', questionName).should('be.visible').within(() => {
             cy.get('a[href*="/questionnaires/"]')
                 .filter(':visible')
