@@ -164,9 +164,10 @@ export class CompanyPage {
                 .should('be.visible')
                 .click({ force: true });
 
-            getInput()
-                .clear({ force: true })
-                .type(option, { force: true });
+            // Break the chain: clear() triggers a TomSelect/Livewire re-render that detaches
+            // the input, so re-query before type() instead of chaining off the stale subject.
+            getInput().clear({ force: true });
+            getInput().type(option, { force: true });
 
             cy.wait(1500);
 
