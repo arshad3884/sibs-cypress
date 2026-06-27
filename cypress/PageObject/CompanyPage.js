@@ -54,28 +54,24 @@ export class CompanyPage {
 
         if (company.parentCompany) {
             cy.get('label[for="parent"]').should('be.visible').and('contain.text', 'Parent company')
-            cy.get('input[placeholder="Select the parent company"]').scrollIntoView().should('be.visible').click()
-            cy.get('.dropdown-active [id*="-ts-dropdown"] [role="option"]').contains(company.mainNace).click({ force: true }) //select first option
+            this.pickTomSelectOption(() => cy.get('input[placeholder="Select the parent company"]'), company.mainNace) //select first option
         }
         if (company.mainNace) {
             cy.get('label[for="business_sector"]').should('be.visible').and('contain.text', 'Main nace').wait(500)
-            cy.get('input[placeholder="Select the main business sector"]').scrollIntoView().should('be.visible').click().wait(500)
-            cy.get('.dropdown-active [id*="-ts-dropdown"] [role="option"]').contains(company.mainNace).click({ force: true }).wait(500)
+            this.pickTomSelectOption(() => cy.get('input[placeholder="Select the main business sector"]'), company.mainNace)
         }
 
         if (company.secondaryNaces?.length) {
             cy.get('label[for="businessSectorSecondary"]').should('be.visible').and('contain.text', 'Secondary naces').wait(500)
-            cy.get('input[placeholder="Select the secondary business sectors."]').scrollIntoView().should('be.visible').click().wait(500)
             company.secondaryNaces.forEach(option => {
-                cy.get('.dropdown-active [id*="-ts-dropdown"] [role="option"]').contains(option).click({ force: true })
+                this.pickTomSelectOption(() => cy.get('input[placeholder="Select the secondary business sectors."]'), option)
             })
             cy.get('input[placeholder="Select the secondary business sectors."]').scrollIntoView().type('{esc}', { force: true }) //to close the dropdown
         }
 
         if (company.tinCountry) {
             cy.get('label[for="vat_country"]').should('be.visible').and('contain.text', 'TIN Country').wait(500)
-            cy.get('input[placeholder="TIN/VAT/CNPJ country"]').scrollIntoView().should('be.visible').click().wait(500)
-            cy.get('.dropdown-active [id*="-ts-dropdown"] [role="option"]').contains(company.tinCountry).click({ force: true })
+            this.pickTomSelectOption(() => cy.get('input[placeholder="TIN/VAT/CNPJ country"]'), company.tinCountry)
         }
 
         if (company.tinNumber) {
@@ -86,8 +82,7 @@ export class CompanyPage {
 
         if (company.headquartersCountry) {
             cy.get('label[for="country"]').should('be.visible').and('contain.text', 'Headquarters country').wait(500)
-            cy.get('input[placeholder="Select the headquarters country"]').scrollIntoView().should('be.visible').click().wait(500)
-            cy.get('.dropdown-active [id*="-ts-dropdown"] [role="option"]').contains(company.headquartersCountry).click({ force: true })
+            this.pickTomSelectOption(() => cy.get('input[placeholder="Select the headquarters country"]'), company.headquartersCountry)
         }
 
         if (company.foundedAt) {
@@ -97,37 +92,44 @@ export class CompanyPage {
 
         if (company.sharingConsent?.length) {
             cy.get('label[for="sharingConsent"]').should('be.visible').and('contain.text', 'Sharing consent')
-                .parents('.relative').find('input[id*="-ts-control"]').scrollIntoView().should('be.visible').click()
             company.sharingConsent.forEach(consent => {
-                cy.get('.dropdown-active [id*="-ts-dropdown"] [role="option"]').contains(consent).click({ force: true })
+                this.pickTomSelectOption(
+                    () => cy.get('label[for="sharingConsent"]').parents('.relative').find('input[id*="-ts-control"]'),
+                    consent
+                )
             })
         }
 
         if (company.entityType) {
             cy.get('label[for="customColumnsData.cus_categories"]').should('be.visible').and('contain.text', 'Entity type')
-                .parents('.relative').find('input[id*="-ts-control"]').scrollIntoView().should('be.visible').click()
-            cy.get('.dropdown-active [id*="-ts-dropdown"] [role="option"]').contains(company.entityType).click({ force: true })
+            this.pickTomSelectOption(
+                () => cy.get('label[for="customColumnsData.cus_categories"]').parents('.relative').find('input[id*="-ts-control"]'),
+                company.entityType
+            )
         }
 
         if (company.referredBy) {
             cy.get('label.text-esg8').contains('Referred by').should('be.visible')
-            cy.get('input[placeholder="Select the referred by"]').scrollIntoView().should('be.visible').click()
-            cy.get('.dropdown-active [id*="-ts-dropdown"] [role="option"]').contains(company.referredBy).click({ force: true })
+            this.pickTomSelectOption(() => cy.get('input[placeholder="Select the referred by"]'), company.referredBy)
         }
 
         if (company.owner?.length) {
             cy.get('label[for="createdByUserId"]').should('be.visible').and('contain.text', 'Owner')
-                .parents('.relative').find('input[id*="-ts-control"]').scrollIntoView().should('be.visible').click()
             company.owner.forEach(option => {
-                cy.get('.dropdown-active [id*="-ts-dropdown"] [role="option"]').contains(option).click({ force: true })
+                this.pickTomSelectOption(
+                    () => cy.get('label[for="createdByUserId"]').parents('.relative').find('input[id*="-ts-control"]'),
+                    option
+                )
             })
         }
 
         if (company.users?.length) {
             cy.get('label[for="userablesId"]').should('be.visible').and('contain.text', 'Users')
-                .parents('.relative').find('input[id*="-ts-control"]').scrollIntoView().should('be.visible').click()
             company.users.forEach(user => {
-                cy.get('.dropdown-active [id*="-ts-dropdown"] [role="option"]').contains(user).click({ force: true })
+                this.pickTomSelectOption(
+                    () => cy.get('label[for="userablesId"]').parents('.relative').find('input[id*="-ts-control"]'),
+                    user
+                )
             })
         }
 
@@ -141,11 +143,67 @@ export class CompanyPage {
             cy.get('input[type="file"]').selectFile(company.logoPath, { force: true });
         }
     }
+    pickTomSelectOption(getInput, option) {
+        const normalize = (text) =>
+            (text || '')
+                .replace(/\u00a0/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim()
+                .toLowerCase();
+
+        const matchesOption = (el) =>
+            normalize(el.innerText || el.textContent).includes(normalize(option));
+
+        const optionSelector =
+            '.dropdown-active [id*="-ts-dropdown"] [role="option"], .ts-dropdown:visible [role="option"], .ts-dropdown:visible .option';
+
+        const openAndSelect = (attemptsLeft) => {
+            // Re-query each command so Livewire re-renders never act on a detached control.
+            getInput()
+                .scrollIntoView()
+                .should('be.visible')
+                .click({ force: true });
+
+            // Break the chain: clear() triggers a TomSelect/Livewire re-render that detaches
+            // the input, so re-query before type() instead of chaining off the stale subject.
+            getInput().clear({ force: true });
+            getInput().type(option, { force: true });
+
+            cy.wait(1500);
+
+            cy.get('body').then(($body) => {
+                const optionReady = [...$body.find(optionSelector)].some(matchesOption);
+
+                if (optionReady) {
+                    cy.get(optionSelector)
+                        .filter((_, el) => matchesOption(el))
+                        .first()
+                        .scrollIntoView()
+                        .click({ force: true });
+                    return;
+                }
+
+                if (attemptsLeft <= 1) {
+                    cy.get('.dropdown-active [id*="-ts-dropdown"] [role="option"], .ts-dropdown:visible [role="option"]')
+                        .contains(option)
+                        .click({ force: true });
+                    return;
+                }
+
+                cy.log(`TomSelect option "${option}" not ready - retrying`);
+                cy.wait(1500);
+                openAndSelect(attemptsLeft - 1);
+            });
+        };
+
+        openAndSelect(5);
+    }
     clickNext() {
         cy.get('button[type="button"]').contains('Next').should('be.visible').click()
     }
     clickFinish() {
         cy.get('button.bg-esg5.text-white').contains('Finish').should('be.visible').click()
+        cy.wait(5000)
     }
     fillCompanyRegistrationQuestionnaire() {
         cy.get('a[href*="/questionnaires"]').contains('Questionnaire: Company Registration Questionnaire -v2025').should('be.visible')
@@ -181,24 +239,73 @@ export class CompanyPage {
         questionPage.answerQuestion("Does the company monitor its Scope 1, 2 and 3 greenhouse gas emissions?", 'radio', 'No'); // if we set No, GHG calculator will be be enabled 
         cy.get('[id="company-btn-move"]').should('be.visible').and('contain.text', 'Next').click()
     }
+    ensureQuestionnaireRow(questionName, attemptsLeft = 3) {
+        // The questionnaire row can take a moment to appear after the previous one is finished.
+        // If it's not in the table yet, reload, re-open the Additional Info tab, and retry.
+        cy.get('body').then(($body) => {
+            if ($body.find(`tr:contains("${questionName}")`).length || attemptsLeft <= 0) {
+                return;
+            }
+            cy.reload();
+            cy.wait(4000);
+            cy.get('button[id="indicatorPanelTabButton__additional-info"]').should('be.visible').click();
+            cy.get('.company-show-extra-info.bg-white').should('be.visible');
+            this.ensureQuestionnaireRow(questionName, attemptsLeft - 1);
+        });
+    }
     openQuestionnaire(questionName) {
-        cy.contains('tr', questionName)
-            .should('be.visible')
-            .within(() => {
-                cy.get('a[href*="/questionnaires/"]')
-                    .filter(':visible')
-                    .first()
-                    .click({ force: true });
-            })
-
-        cy.url().should('include', '/questionnaires/')
-        cy.contains('.grid.content-start .text-esg5', questionName).should('be.visible')
-        //If modal appears
-        cy.wait(3000)
-        cy.get('.p-6').if().then(() => {
-            cy.get('.p-6').should('be.visible').and('contain.text', 'Welcome! You’re at the start of our questionnaire and we’re glad to have you here!')
-            cy.get('a[text="Start Now!"]').should('be.visible').click()
+        this.ensureQuestionnaireRow(questionName)
+        cy.contains('tr', questionName).should('be.visible').within(() => {
+            cy.get('a[href*="/questionnaires/"]')
+                .filter(':visible')
+                .first()
+                .click({ force: true });
         })
 
+        cy.url().should('include', '/questionnaires/').wait(2000)
+        cy.get('[aria-label="Breadcrumb"]').contains(questionName).should('be.visible')
+        cy.wait(3000)
+
+        // Welcome modal (Livewire UI `#modal-container`) — only on first open when welcomepage_enable is set
+        if (
+            questionName.includes('ESG - SIBS') ||
+            questionName.includes('GHG Calculator') ||
+            questionName.includes('Physical Risks')
+        ) {
+            cy.get('#modal-container')
+                .if('visible')
+                .within(() => {
+                    cy.contains('h1', 'at the start of our questionnaire').should('be.visible')
+                    cy.contains('a', 'Start Now!').click()
+                })
+            cy.wait(2000)
+        }
+
+        // Taxonomy welcome screen (inline, not the Livewire modal)
+        if (questionName == 'Taxonomy') {
+            cy.contains('.justify-center button[type="button"]', 'Start').if().should('be.visible').and('be.enabled').click().wait(3000)
+        }
+    }
+    deleteCompany(companyName) {
+        cy.get('[id*="_tooltip_company"] a[href*="/companies/"]')
+            .contains(companyName)
+            .parents('.company-list-card')
+            .find('button[modal="companies.modals.delete"]')
+            .scrollIntoView()
+            .should('be.visible')
+            .click({ force: true });
+
+        cy.get('#modal-container').should('be.visible');
+        cy.get('#modal-container #modal-headline').should('be.visible').and('contain.text', 'Delete a company');
+
+        cy.get('#modal-container')
+            .should('contain.text', `You're about to delete company`)
+            .and('contain.text', companyName)
+            .and('contain.text', `and all content related to it.`)
+            .and('contain.text', `Be advised that deleted items are stored in the system database`);
+
+        cy.get('#modal-container .btn-cancel').should('be.visible').and('contain.text', 'Cancel');
+        cy.get('#modal-container .btn-danger').should('be.visible').and('contain.text', 'Delete').click({ force: true });
+        cy.verifyToast('Company deleted successfully')
     }
 }

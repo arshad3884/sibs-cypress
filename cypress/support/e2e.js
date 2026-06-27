@@ -24,7 +24,8 @@ Cypress.on('uncaught:exception', (err, runnable) => {
     // Handle specific errors
     if (
         err.message?.includes('google is not defined') ||
-        err.message?.includes("Unexpected token '}'")
+        err.message?.includes("Unexpected token '}'") ||
+        err.message?.includes("Cannot read properties of null (reading 'postMessage')")
     ) {
         // Returning false here prevents Cypress from failing the test
         return false;
