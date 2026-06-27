@@ -16,8 +16,8 @@ export class QuestionPage {
         cy.get('[x-show="show && showActiveComponent"] .btn-secondary').should('be.visible').and('contain.text', 'Submit').click()
         cy.wait(5000)
     }
-    refreshAndConfirmSubmission(qustionName) {
-        cy.get('.w-full > .text-esg5').should('be.visible').and('contain.text', qustionName)
+    refreshAndConfirmSubmission(questionName) {
+        cy.get('.w-full > .text-esg5').should('be.visible').and('contain.text', questionName)
         cy.get('.w-full.text-center').should('be.visible').and('contain.text', 'We are processing the questionnaire, please wait a few seconds and refresh the page')
         // Wait first, THEN re-query the link fresh so Livewire's re-render can't detach
         // the element mid-chain (cause of the "page updated as a result of this command" error)

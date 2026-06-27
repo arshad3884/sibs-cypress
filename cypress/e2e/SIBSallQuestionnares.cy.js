@@ -57,12 +57,12 @@ describe("SIBS Company Creation", () => {
     })
   })
   it('Submit ESG - SIBS v2025 Questionnaire and Generate Report', () => {
-    let questioName = 'Questionnaire ESG - SIBS v2025'
+    let questionName = 'Questionnaire ESG - SIBS v2025'
     homePage.gotoCompanies()
     companyPage.gotoCompanyList()
     companyPage.gotoCompanyDetail(companyName)
     companyPage.gotoAdditionalInfo()
-    companyPage.openQuestionnaire(questioName)
+    companyPage.openQuestionnaire(questionName)
     questionPage.validateActiveSection('General Info')
     //1
     questionPage.answerQuestion(
