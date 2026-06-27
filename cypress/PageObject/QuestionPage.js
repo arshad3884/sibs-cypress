@@ -3,8 +3,18 @@ export class QuestionPage {
         cy.get('.pt-7 a[href*="/questionnaires/"]').contains('Next').should('be.visible').wait(1000).click()
         cy.wait(1000)
     }
-    clickSubmit() {
-        cy.get('button[modal="questionnaires.stages.navigation.finish"]').eq(0).should('contain.text', 'Submit').scrollIntoView().should('be.visible').click() //Submit
+    submitQuestion() {
+        //cy.get('button[modal="questionnaires.stages.navigation.finish"]').eq(0).should('contain.text', 'Submit').scrollIntoView().should('be.visible').click() //Submit
+        // The last answer's check() fires a Livewire update that morphs the Submit <button>
+        // (disabled -> enabled). Wait for that update to settle, then keep the query chain
+        // RETRYABLE (no scrollIntoView before the assertion - it freezes the subject to a detached/
+        // disabled stale element). click() auto-scrolls the freshly-resolved enabled button.
+        cy.wait(2000)
+        cy.get('[type="button"]')
+            .contains('Submit')
+            .should('be.visible')
+            .and('be.enabled')
+            .click() //Submit
         //modal
         cy.get('[x-show="show && showActiveComponent"] h3[id="modal-headline"]').should('be.visible').and('contain.text', 'Finish your questionnaire')
         cy.get('[x-show="show && showActiveComponent"] .pt-6').should('be.visible').and('contain.text', 'Are you sure you want to finish your questionnaire?')
@@ -495,9 +505,231 @@ export class QuestionPage {
     validateCurrentGHGSection(sectionNo) {
         cy.get('a .drop-shadow').eq(sectionNo - 1).should('have.class', 'border-esg5') //should be selected
     }
+
     //Taxonomy
-    gotoVerifyLink(sectionName){
+    expandSection(sectionName) {
         cy.get('.accordion-header .text-base').contains(sectionName).parents('.accordion-item').find('.accordion-button').click()
+    }
+    gotoVerifyLink(sectionName) {
         cy.get('.accordion-header .text-base').contains(sectionName).parents('.accordion-item').find('button[type="button"]').contains('Verify').click()
+    }
+    answerTaxonomyQuestion(description, type, answer, questionIndex = 0) {
+        const normalizeType = type.toLowerCase().trim();
+
+        cy.contains('.max-h-auto p.text-normal, .max-h-auto p.text-base', description)
+            .eq(questionIndex)
+            .should('be.visible')
+            .parents('.max-h-auto')
+            .first()
+            .then(($question) => {
+                const questionSelector = $question;
+
+                cy.wrap(questionSelector)
+                    .scrollIntoView()
+                    .should('be.visible');
+
+                switch (normalizeType) {
+                    case 'radio':
+                    case 'yes/no':
+                    case 'binary':
+                        cy.wrap(questionSelector)
+                            .find('input[type="radio"]')
+                            .filter((_, input) => {
+                                const actual = input.value.replace(/\.$/, '').trim().toLowerCase();
+                                const expected = answer.replace(/\.$/, '').trim().toLowerCase();
+
+                                return actual === expected;
+                            })
+                            .first()
+                            .should('exist')
+                            .check({ force: true })
+                            .wait(2000)
+                            .should('be.checked');
+                        break;
+
+                    default:
+                        throw new Error(`Unsupported taxonomy question type: ${type}`);
+                }
+            });
+    }
+    clickComplete() {
+        cy.get('button[text="Complete"]').should('be.visible').click()
+    }
+    verifyCompletedSection(sectionName) {
+        cy.contains('.accordion-header .text-base', sectionName)
+            .should('be.visible')
+            .parents('.accordion-item')
+            .first()
+            .find('.accordion-header svg')
+            .first()
+            .should('be.visible');
+    }
+    addKPIValues(capex, opex) {
+        cy.contains('label', 'CAPEX')
+            .parent()
+            .find('input[id="value"]')
+            .clear()
+            .type(capex.toString(), { force: true })
+            .blur();
+
+        cy.contains('label', 'OPEX')
+            .parent()
+            .find('input[id="value"]')
+            .clear()
+            .type(opex.toString(), { force: true })
+            .blur();
+    }
+    declareMininumSafguardOption(sectionName, option) {
+        cy.get('.accordion-header .text-base').contains(sectionName).parents('.accordion-item').find('button[type="button"]').contains('Declare').click()
+        cy.get('[id="modal-container"]').contains(option).parents('li').find('[name="safeguardAligned"]').check({ force: true }).should('be.checked').wait(1000)
+        cy.get('[id="modal-container"] [savemethod="save"]').should('be.visible').click() //Save
+    }
+    addActivityInTaxonomy(activityName, taxonomySector, taxonomyActivity, activityKPI) {
+        cy.contains('button', 'Add activity').should('be.visible').click()
+        cy.get('#name').should('be.visible').clear().type(activityName)
+
+        // Relevant taxonomy sector — scope to the visible "Add activity" form's wrapper, since the
+        // page can hold multiple `.ts-wrapper` siblings (already-added activities / re-render).
+        cy.get('select[data-property-id="sector"]')
+            .siblings('.ts-wrapper')
+            .filter(':visible')
+            .first()
+            .find('.ts-control')
+            .click({ force: true })
+        cy.get('.ts-dropdown:visible .option')
+            .contains(taxonomySector, { matchCase: false })
+            .click({ force: true })
+        cy.wait(2000)
+
+        // Relevant taxonomy activity — the dropdown doesn't reliably open via a forced click after
+        // the Livewire re-render. Instead set the value directly through the TomSelect instance
+        // (stored on the native <select> as `.tomselect`): look up the option by its label and call
+        // setValue(id), which fires TomSelect's onChange -> wire:model.live. No dropdown needed.
+        cy.get('select[data-property-id="activity"]')
+            .siblings('.ts-wrapper')
+            .filter(':visible')
+            .first()
+            .prev('select[data-property-id="activity"]')
+            .then(($select) => {
+                const ts = $select[0].tomselect;
+                const wanted = taxonomyActivity.replace(/\s+/g, ' ').trim().toLowerCase();
+                const match = Object.values(ts.options).find(
+                    (o) => (o.title || '').replace(/\s+/g, ' ').trim().toLowerCase().includes(wanted)
+                );
+                expect(match, `taxonomy activity option "${taxonomyActivity}"`).to.exist;
+                ts.setValue(String(match[ts.settings.valueField] ?? match.id));
+            });
+
+        cy.wait(2000)
+
+        cy.get('select[data-property-id="activity"]')
+            .siblings('.ts-wrapper')
+            .filter(':visible')
+            .first()
+            .find('.ts-control')
+            .should('contain.text', taxonomyActivity)
+
+        // No special case
+        cy.get('#specialCaseActivity-no').check({ force: true })
+
+        // 1. Check eligibility
+        cy.contains('The chosen activity may be eligible').should('be.visible')
+        cy.contains('button', 'Read description').should('be.visible').click()
+        cy.contains('.modal-header', 'Description').should('be.visible')
+        cy.contains('button', 'Close').click()
+        cy.contains('label', 'Confirm description and eligibility').click()
+        // Select the first eligible objective
+        cy.get('input[id="eligibility"]').should('be.enabled').check({ force: true }).wait(500)
+
+        // KPI values. These inputs use Livewire `wire:model.blur`: each blur commits the value and
+        // triggers a `/livewire/update` morph that re-renders ALL three inputs. Do NOT wrap this in
+        // `within()` - its container detaches on the first morph, so later queries hit stale/empty
+        // re-rendered inputs (the values appear to "clear"). Query by id each time and wait for each
+        // commit's round-trip to settle so the values accumulate instead of resetting each other.
+        cy.get('#specialCaseActivity-no').check({ force: true })
+
+        cy.get('#activityVolume\\.volume\\.value:visible')
+            .clear({ force: true })
+            .type(activityKPI.businessVolume.toString(), { force: true })
+            .blur()
+        cy.wait(2000)
+
+        cy.get('#activityVolume\\.capex\\.value:visible')
+            .clear({ force: true })
+            .type(activityKPI.capex.toString(), { force: true })
+            .blur()
+        cy.wait(2000)
+
+        cy.get('#activityVolume\\.opex\\.value:visible')
+            .clear({ force: true })
+            .type(activityKPI.opex.toString(), { force: true })
+            .blur()
+        cy.wait(2000)
+        // "Add" commits via wire:click="createAndClose"; target by wire:click to avoid the
+        // "Add Another" button and the whitespace around the button's "Add" label.
+        cy.get('button[wire\\:click="createAndClose"]')
+            .filter(':visible')
+            .should('be.enabled')
+            .click({ force: true })
+    }
+    goToSubstantialContribute() {
+        cy.contains('.flex.items-center.gap-3', '2. Substantial contribute')
+            .should('be.visible').within(() => {
+                cy.contains('span', '2. Substantial contribute').should('be.visible')
+                cy.get('a').should('have.attr', 'href').and('include', '/taxonomy/substantial/')
+                cy.get('a').click()
+            })
+        cy.url().should('include', '/taxonomy/substantial/')
+    }
+    goToTaxonomyQuestionnaire(objective, section = 'substantial') {
+        cy.contains('.grid.grid-cols-6', objective)
+            .should('be.visible')
+            .within(() => {
+                cy.contains('a', 'Verify')
+                    .should('have.attr', 'href')
+                    .and('include', `/taxonomy/${section}/`)
+                    .then((href) => {
+                        cy.visit(href);
+                    });
+            });
+
+        cy.url().should('include', `/taxonomy/${section}/`);
+    }
+    selectMostRelevantObjective(objective) {
+        cy.get('select[data-property-id="mostRelevant"]')
+            .siblings('.ts-wrapper')
+            .find('.ts-control')
+            .should('be.visible')
+            .click();
+
+        cy.get('.ts-dropdown:visible .option')
+            .contains(objective)
+            .should('be.visible')
+            .click();
+
+        cy.get('select[data-property-id="mostRelevant"]')
+            .siblings('.ts-wrapper')
+            .find('.item')
+            .should('contain.text', objective)
+        cy.wait(1000)
+    }
+    goToDNSH() { //Does Not Significantly Harm
+        cy.contains('.flex.items-center.gap-3', '3. Does Not Significantly Harm')
+            .should('be.visible').within(() => {
+                cy.contains('span', '3. Does Not Significantly Harm').should('be.visible')
+                cy.get('a').should('have.attr', 'href').and('include', '/taxonomy/dnsh/').then((href) => {
+                    cy.visit(href)
+                })
+            })
+        cy.url().should('include', '/taxonomy/dnsh/')
+    }
+    clickSubmit() {
+        cy.wait(1000)
+        cy.get('[type="button"]').contains('Submit').should('be.visible').click()
+    }
+    downloadTaxonomyFullReport() {
+        cy.get('#dropdownDefault').should('contain.text', 'Download').and('be.visible').click()
+        cy.get('#dropdown > .text-sm > :nth-child(2)').should('contain.text', 'Full report').and('be.visible').click()
+        cy.url().should('include','/taxonomy/report/export/')
     }
 }

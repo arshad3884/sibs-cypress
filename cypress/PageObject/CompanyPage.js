@@ -249,7 +249,10 @@ export class CompanyPage {
         cy.get('[aria-label="Breadcrumb"]').contains(questionName).should('be.visible')
         cy.wait(3000)
         //For GHG and ESG Questionnaire
-        if (questionName == 'Taxonomy') {
+        if (
+            questionName.includes('ESG - SIBS') ||
+            questionName.includes('GHG Calculator')
+        ) {
             cy.get('.p-6').if().then(() => {
                 cy.get('.p-6').should('be.visible').and('contain.text', 'Welcome! You’re at the start of our questionnaire and we’re glad to have you here!')
                 cy.get('a[text="Start Now!"]').should('be.visible').click()

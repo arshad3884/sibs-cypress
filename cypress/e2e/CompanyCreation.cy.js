@@ -56,7 +56,7 @@ describe("SIBS Company Creation", () => {
       companyPage.clickFinish()
     })
   })
-  it('Submit ESG - SIBS v2025 Questionnaire', () => {
+  it('Submit ESG - SIBS v2025 Questionnaire and Generate Report', () => {
     let questioName = 'Questionnaire ESG - SIBS v2025'
     homePage.gotoCompanies()
     companyPage.gotoCompanyList()
@@ -411,7 +411,7 @@ describe("SIBS Company Creation", () => {
         'There are imminent cases of environmental litigation'
       ]
     );
-    questionPage.clickSubmit()
+    questionPage.submitQuestion()
     cy.wait(10000)
     questionPage.clickViewReport()
   })
@@ -673,17 +673,92 @@ describe("SIBS Company Creation", () => {
       'radio',
       'No'
     )
-    questionPage.clickSubmit()
+    questionPage.submitQuestion()
     questionPage.refreshAndConfirmSubmission(questionName)
   })
-  it.skip('Submit Taxonomy Questionnaire', () => {
+  it('Submit Taxonomy Questionnaire and Download Report', () => {
     let questionName = 'Taxonomy'
     homePage.gotoCompanies()
     companyPage.gotoCompanyList()
-    companyPage.gotoCompanyDetail('Load Test Streich - Champlin')
+    companyPage.gotoCompanyDetail(companyName)
     companyPage.gotoAdditionalInfo()
     companyPage.openQuestionnaire(questionName)
+    //cy.visit('/questionnaires/taxonomy/3071')
+    //Specific verification for nuclear energy and fossil gas-related activities
+    questionPage.expandSection('Specific verification for nuclear energy and fossil gas-related activities')
     questionPage.gotoVerifyLink('Specific verification for nuclear energy and fossil gas-related activities')
-
+    questionPage.answerTaxonomyQuestion('A empresa desenvolve atividades relacionadas com energia nuclear ou gás natural?',
+      'binary', 'Não')
+    // questionPage.answerTaxonomyQuestion('(Energia nuclear - 4.26) A empresa desenvolve atividades de investigação, desenvolvimento, demonstração e implantação de instalações inovadoras de produção de eletricidade que produzem energia a partir de processos nucleares com um mínimo de resíduos do ciclo do combustível?',
+    //   'binary', 'Sim')
+    // questionPage.answerTaxonomyQuestion('(Energia nuclear - 4.27) A empresa desenvolve construção e o funcionamento seguro de novas instalações nucleares destinadas a produzir eletricidade ou calor industrial, incluindo para fins de aquecimento urbano ou processos industriais, como a produção de hidrogénio, bem como para a melhoria da sua segurança, utilizando as melhores tecnologias disponíveis?',
+    //   'binary', 'Sim')
+    // questionPage.answerTaxonomyQuestion('(Energia nuclear - 4.28) A empresa desenvolve funcionamento seguro de instalações nucleares existentes que produzem eletricidade ou calor industrial, incluindo para fins de aquecimento urbano ou processos industriais, como a produção de hidrogénio a partir de energia nuclear, bem como a melhoria da sua segurança?',
+    //   'binary', 'Sim')
+    // questionPage.answerTaxonomyQuestion('(Gás fóssil - 4.29) A empresa desenvolve construção ou exploração de instalações de produção de eletricidade que produzem eletricidade a partir de combustíveis fósseis gasosos?',
+    //   'binary', 'Sim')
+    // questionPage.answerTaxonomyQuestion('(Gás fóssil - 4.30) A empresa desenvolve construção, renovação ou exploração de instalações de produção combinada de calor/frio e eletricidade que utilizam combustíveis fósseis gasosos?',
+    //   'binary', 'Sim')
+    // questionPage.answerTaxonomyQuestion('(Gás fóssil - 4.31) A empresa desenvolve construção, renovação ou exploração de instalações de produção de calor que produzem calor/frio a partir de combustíveis fósseis gasosos?',
+    //   'binary', 'Sim')
+    questionPage.clickComplete()
+    questionPage.verifyCompletedSection('Specific verification for nuclear energy and fossil gas-related activities')
+    //Step 1: KPI's
+    questionPage.expandSection(`Step 1: KPI's`)
+    questionPage.addKPIValues('1000000', '1000000')
+    questionPage.verifyCompletedSection(`Step 1: KPI's`)
+    //Step 2: Minimal Safeguards
+    questionPage.expandSection(`Step 2: Minimal Safeguards`)
+    questionPage.declareMininumSafguardOption('Step 2: Minimal Safeguards', 'Compliance with minimum safeguards verified')
+    questionPage.verifyCompletedSection(`Step 2: Minimal Safeguards`)
+    //Step 3: Activities
+    //1. Eligibility
+    questionPage.addActivityInTaxonomy(
+      'Solar Energy Production',
+      '4 - Energia',
+      '4.1 - Produção de eletricidade a partir da tecnologia solar fotovoltaica',
+      {
+        businessVolume: 3000000,
+        capex: 1000000,
+        opex: 1000000
+      }
+    )
+    //2. Substantial contribute
+    questionPage.goToSubstantialContribute()
+    questionPage.goToTaxonomyQuestionnaire('Mitigação das alterações climáticas', 'substantial')
+    questionPage.answerTaxonomyQuestion('A atividade consiste na produção de eletricidade a partir da tecnologia solar fotovoltaica?',
+      'binary', 'Sim')
+    questionPage.clickComplete()
+    questionPage.goToTaxonomyQuestionnaire('Adaptação às alterações climáticas', 'substantial')
+    questionPage.answerTaxonomyQuestion('Foram adotadas soluções físicas e não físicas («soluções de adaptação») que reduzem substancialmente os mais importantes riscos físicos associados ao clima?',
+      'binary', 'Sim')
+    questionPage.answerTaxonomyQuestion('Foi realizado um estudo ou avaliação do risco climático e da vulnerabilidade dos principais riscos físicos associados ao clima com relevância para a atividade, de acordo com os requisitos e etapas constantes do Anexo II do Regulamento Delegado (UE) 2021/2139 e tendo em conta os riscos descritos no Anexo A?',
+      'binary', 'Sim')
+    questionPage.answerTaxonomyQuestion('As soluções de adaptação adotadas preenchem os seguintes critérios:',
+      'binary', 'Sim')
+    questionPage.clickComplete()
+    questionPage.selectMostRelevantObjective('Mitigação das alterações climáticas')
+    questionPage.clickSubmit()
+    //3. Does Not Significantly Harm
+    questionPage.goToDNSH()
+    questionPage.goToTaxonomyQuestionnaire('Transição para uma economia circular', 'dnsh')
+    questionPage.answerTaxonomyQuestion('É avaliada a disponibilidade e, se possível, são utilizados equipamentos e componentes de elevada durabilidade e reciclabilidade e de fácil desmontagem e reparação?',
+      'binary', 'Sim')
+    questionPage.clickComplete()
+    questionPage.goToTaxonomyQuestionnaire('Proteção e restauro da biodiversidade e dos ecossistemas', 'dnsh')
+    questionPage.answerTaxonomyQuestion('Foi efetuado procedimento de Avaliação de Impacte Ambiental (AIA) ou verificação preliminar em conformidade com a Diretiva 2011/92/UE?',
+      'binary', 'Foi realizada AIA, com decisão final favorável ou favorável condicionada')
+    questionPage.answerTaxonomyQuestion('A atividade é desenvolvida no interior ou na proximidade de zonas sensíveis do ponto de vista da biodiversidade, tais como a rede Natura 2000 de áreas protegidas, os sítios Património Mundial, as zonas-chave de biodiversidade da UNESCO, ou outras áreas protegidas?',
+      'binary', 'Sim')
+    questionPage.answerTaxonomyQuestion('Foi efetuado procedimento de avaliação ambiental adequado, tendo em conta o local em que é desenvolvida a atividade?',
+      'binary', 'Sim, foi realizado procedimento de avaliação ambiental autónomo adequado à zona em que é desenvolvida a atividade')
+    questionPage.answerTaxonomyQuestion('Foram / são adotadas as medidas de mitigação e de compensação necessárias, resultantes da AIA ou do procedimento de avaliação ambiental?',
+      'binary', 'Sim')
+    questionPage.clickComplete()
+    questionPage.clickSubmit()
+    questionPage.verifyCompletedSection('Step 3: Activities')
+    questionPage.submitQuestion()
+    cy.url().should('include', '/questionnaires/taxonomy/report/')
+    questionPage.downloadTaxonomyFullReport()
   })
 })
