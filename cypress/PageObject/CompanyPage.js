@@ -202,6 +202,7 @@ export class CompanyPage {
     }
     clickFinish() {
         cy.get('button.bg-esg5.text-white').contains('Finish').should('be.visible').click()
+        cy.wait(5000)
     }
     fillCompanyRegistrationQuestionnaire() {
         cy.get('a[href*="/questionnaires"]').contains('Questionnaire: Company Registration Questionnaire -v2025').should('be.visible')
@@ -248,17 +249,23 @@ export class CompanyPage {
         cy.url().should('include', '/questionnaires/').wait(2000)
         cy.get('[aria-label="Breadcrumb"]').contains(questionName).should('be.visible')
         cy.wait(3000)
-        //For GHG and ESG Questionnaire
+
+        // Welcome modal (Livewire UI `#modal-container`) — only on first open when welcomepage_enable is set
         if (
             questionName.includes('ESG - SIBS') ||
-            questionName.includes('GHG Calculator')
+            questionName.includes('GHG Calculator') ||
+            questionName.includes('Physical Risks')
         ) {
-            cy.get('.p-6').if().then(() => {
-                cy.get('.p-6').should('be.visible').and('contain.text', 'Welcome! You’re at the start of our questionnaire and we’re glad to have you here!')
-                cy.get('a[text="Start Now!"]').should('be.visible').click()
-            })
+            cy.get('#modal-container')
+                .if('visible')
+                .within(() => {
+                    cy.contains('h1', 'at the start of our questionnaire').should('be.visible')
+                    cy.contains('a', 'Start Now!').click()
+                })
+            cy.wait(2000)
         }
-        //For Taxonomy
+
+        // Taxonomy welcome screen (inline, not the Livewire modal)
         if (questionName == 'Taxonomy') {
             cy.contains('.justify-center button[type="button"]', 'Start').if().should('be.visible').and('be.enabled').click().wait(3000)
         }

@@ -4,11 +4,6 @@ export class QuestionPage {
         cy.wait(1000)
     }
     submitQuestion() {
-        //cy.get('button[modal="questionnaires.stages.navigation.finish"]').eq(0).should('contain.text', 'Submit').scrollIntoView().should('be.visible').click() //Submit
-        // The last answer's check() fires a Livewire update that morphs the Submit <button>
-        // (disabled -> enabled). Wait for that update to settle, then keep the query chain
-        // RETRYABLE (no scrollIntoView before the assertion - it freezes the subject to a detached/
-        // disabled stale element). click() auto-scrolls the freshly-resolved enabled button.
         cy.wait(2000)
         cy.get('[type="button"]')
             .contains('Submit')
@@ -24,9 +19,13 @@ export class QuestionPage {
     refreshAndConfirmSubmission(qustionName) {
         cy.get('.w-full > .text-esg5').should('be.visible').and('contain.text', qustionName)
         cy.get('.w-full.text-center').should('be.visible').and('contain.text', 'We are processing the questionnaire, please wait a few seconds and refresh the page')
-        cy.contains('a', 'Refresh').should('be.visible').wait(8000).click().wait(3000)
-        cy.contains('a', 'Refresh').if().should('be.visible').wait(5000).click()
-        cy.contains('Your questionnaire was submitted!').and('be.visible')
+        // Wait first, THEN re-query the link fresh so Livewire's re-render can't detach
+        // the element mid-chain (cause of the "page updated as a result of this command" error)
+        cy.wait(10000)
+        cy.get('a:contains("Refresh")').should('be.visible').click().wait(1000)
+        if (questionName.includes('GHG Calculator')) {
+            cy.contains('Your questionnaire was submitted!').should('be.visible')
+        }
     }
     validateActiveSection(sectionName) {
         cy.get('h2 .text-esg5').contains(sectionName).scrollIntoView().should('be.visible')
@@ -381,75 +380,6 @@ export class QuestionPage {
                 cy.get('body').click(0, 0, { force: true });
             });
     }
-    // addValue(description, value, unit) {
-    //     const normalizeText = (text) =>
-    //         text
-    //             .toString()
-    //             .replace('×', '')
-    //             .replace(/\u00a0/g, ' ')
-    //             .replace(/\s+/g, ' ')
-    //             .trim()
-    //             .toLowerCase();
-
-    //     cy.contains('[data-is-checkbox-dropdown-row="1"] .border-0.text-esg39', description, {
-    //         matchCase: false
-    //     })
-    //         .should('be.visible')
-    //         .and(($desc) => {
-    //             expect(normalizeText($desc.text())).to.include(normalizeText(description));
-    //         })
-    //         .parents('[data-is-checkbox-dropdown-row="1"]')
-    //         .first()
-    //         .as('selectedValueRow');
-
-    //     cy.get('@selectedValueRow')
-    //         .find('input[placeholder="Value"]:visible')
-    //         .first()
-    //         .clear({ force: true })
-    //         .type(value.toString(), { force: true })
-    //         .should(($input) => {
-    //             const actual = $input.val().replace(/\s/g, '');
-    //             expect(actual).to.eq(value.toString()).wait(500)
-    //         });
-
-    //     if (unit && unit.toLowerCase() !== 'unit') {
-    //         cy.get('@selectedValueRow').then(($row) => {
-    //             const alreadySelected = [...$row.find('.ts-control .item')]
-    //                 .some((el) => normalizeText(el.innerText).includes(normalizeText(unit)));
-
-    //             if (alreadySelected) {
-    //                 cy.log(`${unit} already selected - skipping`);
-    //                 return;
-    //             }
-
-    //             cy.wrap($row)
-    //                 .find('.ts-control')
-    //                 .first()
-    //                 .click({ force: true });
-
-    //             cy.get('.ts-dropdown:visible .dropdown-input, .ts-dropdown:visible input:visible')
-    //                 .first()
-    //                 .clear({ force: true })
-    //                 .type(unit, { force: true });
-
-    //             cy.get('.ts-dropdown:visible .option, .ts-dropdown:visible [role="option"]', {
-    //                 timeout: 30000
-    //             }).filter((_, optionEl) =>
-    //                 normalizeText(optionEl.innerText).includes(normalizeText(unit))
-    //             ).first()
-    //                 .should('be.visible')
-    //                 .click({ force: true }).wait(1000)
-
-    //             cy.wrap($row)
-    //                 .find('.ts-control .item')
-    //                 .should(($item) => {
-    //                     expect(normalizeText($item.text())).to.include(normalizeText(unit));
-    //                 });
-    //         });
-    //     }
-
-    //     cy.get('body').click(0, 0, { force: true });
-    // }
     addValue(description, value, unit) {
         cy.contains('[data-is-checkbox-dropdown-row="1"] .border-0.text-esg39', description, { matchCase: false })
             .should('be.visible')
@@ -730,6 +660,174 @@ export class QuestionPage {
     downloadTaxonomyFullReport() {
         cy.get('#dropdownDefault').should('contain.text', 'Download').and('be.visible').click()
         cy.get('#dropdown > .text-sm > :nth-child(2)').should('contain.text', 'Full report').and('be.visible').click()
-        cy.url().should('include','/taxonomy/report/export/')
+        cy.url().should('include', '/taxonomy/report/export/')
     }
+
+    //Physical Risk
+    addAsset(assetName, assetType, primaryNACE, assetLocation, assetRelevance) {
+        cy.get('.grid a[href*="/questionnaires"]').contains('Questionnaire: Physical Risks').should('be.visible')
+        cy.contains('button#addForm', 'Add Asset and its Location', { matchCase: false })
+            .scrollIntoView()
+            .should('be.visible')
+        cy.wait(1500)
+        cy.contains('button#addForm', 'Add Asset and its Location', { matchCase: false })
+            .click({ force: true })
+        cy.get('input[id="name"]', { timeout: 10000 }).should('be.visible')
+        //Asset Name
+        cy.get('input[id="name"]').should('be.visible').clear().type(assetName)
+        cy.get('input[id="name"]').should('have.value', assetName)
+        //Asset type 
+        cy.get('select[data-property-id="assetType"]')
+            .siblings('.ts-wrapper')
+            .find('.ts-control')
+            .click({ force: true })
+        cy.contains('.ts-dropdown:visible .option', assetType, { matchCase: false }).click({ force: true })
+        cy.get('select[data-property-id="assetType"]')
+            .siblings('.ts-wrapper')
+            .find('.ts-control .item')
+            .should('contain.text', assetType)
+        // Select the primary NACE for the selected asset in this location 
+        cy.get('#activity option')
+            .then(($options) => {
+                const expected = primaryNACE.replace(/\s+/g, ' ').trim().toLowerCase();
+                const option = [...$options].find((opt) => {
+                    const text = opt.innerText.replace(/\s+/g, ' ').trim().toLowerCase();
+                    const value = opt.value.replace(/\s+/g, ' ').trim().toLowerCase();
+
+                    return text.includes(expected) || value === expected;
+                });
+
+                expect(option, `primary NACE option "${primaryNACE}"`).to.exist;
+                cy.get('#activity').select(option.value).should('have.value', option.value);
+            })
+        cy.wait(1000)
+
+        this.addAssetLocation(assetLocation)
+
+        // Relevance (asset value)
+        cy.get('select[data-property-id="relevanceAssetValue"]')
+            .siblings('.ts-wrapper')
+            .find('.ts-control')
+            .click({ force: true })
+        cy.contains('.ts-dropdown:visible .option', assetRelevance.relevanceAssetValue, { matchCase: false }).click({ force: true })
+        cy.get('#relevanceJustificationAssetValue').type(assetRelevance.relevanceJustificationAssetValue).blur()
+        cy.get('#relevanceJustificationAssetValue').should('have.value', assetRelevance.relevanceJustificationAssetValue)
+
+        // Relevance (business volume)
+        cy.get('select[data-property-id="relevanceBusinessVolume"]')
+            .siblings('.ts-wrapper')
+            .find('.ts-control')
+            .click({ force: true })
+        cy.contains('.ts-dropdown:visible .option', assetRelevance.relevanceBusinessVolume, { matchCase: false }).click({ force: true })
+        cy.get('#relevanceJustificationBusinessVolume').type(assetRelevance.relevanceJustificationBusinessVolume).blur()
+        cy.get('#relevanceJustificationBusinessVolume').should('have.value', assetRelevance.relevanceJustificationBusinessVolume)
+
+        // Insurance coverage
+        cy.get('select[data-property-id="insuranceCoverage"]')
+            .siblings('.ts-wrapper')
+            .find('.ts-control')
+            .click({ force: true })
+        cy.contains('.ts-dropdown:visible .option', assetRelevance.insuranceCoverage, { matchCase: false }).click({ force: true })
+
+        if (assetRelevance.insuranceCoverage?.toLowerCase() === 'yes') {
+            cy.get('select[data-property-id="insuranceCoverageOptions"]').scrollIntoView().should('be.visible')
+            cy.wait(1000)
+
+            assetRelevance.insuranceCoverageOptions.forEach((coverage) => {
+                cy.get('select[data-property-id="insuranceCoverageOptions"]')
+                    .siblings('.ts-wrapper')
+                    .find('.ts-control')
+                    .click({ force: true })
+                cy.contains('.ts-dropdown:visible .option', coverage, { matchCase: false })
+                    .click({ force: true })
+            })
+            cy.get('body').click(0, 0, { force: true })
+
+            cy.get('#insuranceCoverageFile').selectFile('cypress/fixtures/Ficheiro_9MB.pdf', { force: true })
+            cy.wait(2000)
+        }
+
+        // Re-verify address fields still hold values after later Livewire morphs
+        cy.get('[data-test="add-name-btn"]').should('have.value', assetLocation.name)
+        cy.get('[data-test="add-latitude-btn"]').should('have.value', String(assetLocation.latitude))
+        cy.get('[data-test="add-longitude-btn"]').should('have.value', String(assetLocation.longitude))
+        cy.get('[data-test="add-postal-code-btn"]').should('have.value', String(assetLocation.postalCode))
+
+        // Add button stays disabled (wire:loading) while the file uploads/saves; wait until it
+        // turns enabled (yellow) then click. Upload can take ~30s.
+        cy.get('button[data-test="save-btn"][text="Add"]', { timeout: 80000 })
+            .scrollIntoView()
+            .should('be.visible')
+            .and('be.enabled')
+            .click({ force: true })
+    }
+    addAssetLocation(assetLocation) {
+        cy.contains('button', 'Add a new asset location', { matchCase: false }).click({ force: true })
+        cy.wait(1000)
+
+        // Text inputs - type, blur, then let the Livewire morph settle before the next field
+        cy.get('[data-test="add-name-btn"]').clear().type(assetLocation.name).blur()
+        cy.wait(1500)
+        cy.get('[data-test="add-name-btn"]').should('have.value', assetLocation.name)
+        cy.get('[data-test="add-latitude-btn"]').clear().type(String(assetLocation.latitude)).blur()
+        cy.wait(1500)
+        cy.get('[data-test="add-latitude-btn"]').should('have.value', String(assetLocation.latitude))
+        cy.get('[data-test="add-longitude-btn"]').clear().type(String(assetLocation.longitude)).blur()
+        cy.wait(1500)
+        cy.get('[data-test="add-longitude-btn"]').should('have.value', String(assetLocation.longitude))
+
+        // Country 
+        cy.get('input[placeholder="Select the country"]').parent('.ts-control').click().wait(1000)
+        cy.get('input[placeholder="Select the country"]').parent('.ts-control').click()
+        cy.get('select[data-property-id$="country_code"]').parent('div')
+            .find('[role="option"]').contains(assetLocation.country).should('exist').click({ force: true })
+        cy.wait(2000)
+        cy.get('select[data-property-id$="country_code"]').siblings('.ts-wrapper').find('.ts-control .item').should('contain.text', assetLocation.country)
+
+        cy.get('input[placeholder="Select the region"]').parent('.ts-control').click().wait(1000)
+        cy.get('input[placeholder="Select the region"]').parent('.ts-control').click()
+        cy.get('select[data-property-id$="region_code"]').parent('div')
+            .find('[role="option"]').contains(assetLocation.region).should('exist').click({ force: true })
+        cy.wait(2000)
+        cy.get('select[data-property-id$="region_code"]').siblings('.ts-wrapper').find('.ts-control .item').should('contain.text', assetLocation.region)
+
+        cy.get('input[placeholder="Select the city"]').parent('.ts-control').click().wait(1000)
+        cy.get('input[placeholder="Select the city"]').parent('.ts-control').click().click()
+        cy.get('select[data-property-id$="city_code"]').parent('div')
+            .find('[role="option"]').contains(assetLocation.city).should('exist').click({ force: true })
+        cy.wait(2000)
+        cy.get('select[data-property-id$="city_code"]').siblings('.ts-wrapper').find('.ts-control .item').should('contain.text', assetLocation.city)
+
+        cy.get('[data-test="add-postal-code-btn"]').clear().type(String(assetLocation.postalCode)).blur()
+        cy.get('[data-test="add-postal-code-btn"]').should('have.value', String(assetLocation.postalCode))
+    }
+
+    // Opens the Contingency/Continuity plan modal for a given hazard (e.g. 'Earthquake')
+    // and answers both questions. contingencyPlan/continuityPlan are 'Yes' or 'No'.
+    selectRiskPlan(potentialRisk, contingencyPlan, continuityPlan) {
+        cy.contains('div.left-block', potentialRisk, { matchCase: false })
+            .find('button[modal="questionnaires.physicalrisks.modals.plan"]')
+            .should('be.visible')
+            .click({ force: true })
+        cy.wait(1000)
+
+        const contingencyValue = contingencyPlan.toLowerCase() === 'yes' ? '1' : '0'
+        const continuityValue = continuityPlan.toLowerCase() === 'yes' ? '1' : '0'
+
+        cy.get('#modal-container').should('be.visible').within(() => {
+            cy.contains('h3', 'Contingency Plan').should('be.visible')
+
+            cy.get(`input[name="risk.has_contingency_plan"][value="${contingencyValue}"]`)
+                .check({ force: true })
+            cy.wait(1000)
+
+            cy.get(`input[name="risk.has_continuity_plan"][value="${continuityValue}"]`)
+                .check({ force: true })
+            cy.wait(1000)
+
+            cy.get('button[text="Confirm"]').should('be.visible').and('be.enabled').click({ force: true })
+        })
+        cy.wait(1500)
+    }
+
 }
