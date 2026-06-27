@@ -11,16 +11,29 @@ const companyPage = new CompanyPage()
 const questionPage = new QuestionPage()
 
 describe("SIBS Company Creation", () => {
+  const foundationTest = 'Create a New company and complete Company Registration Questionnaire'
   let companyName
+  let skipRemainingTests = false
 
-  beforeEach(() => {
+  afterEach(function () {
+    if (this.currentTest.title === foundationTest && this.currentTest.state === 'failed') {
+      skipRemainingTests = true
+    }
+  })
+
+  beforeEach(function () {
+    if (skipRemainingTests) {
+      cy.log('Skipped: company creation failed — remaining questionnaires depend on that company.')
+      this.skip()
+    }
+
     cy.env(["TENANT_URL", "USERS"]).then(({ TENANT_URL, USERS }) => {
       cy.visit('/login')
       loginPage.loginOnTenant(USERS.TENANT_USERNAME, USERS.TENANT_PASSWORD)
     })
   })
 
-  it("Create a New company and complete Company Registration Questionnaire", () => {
+  it(foundationTest, () => {
     let tinNumber
     companyName = 'Load Test ' + faker.company.name()
 
