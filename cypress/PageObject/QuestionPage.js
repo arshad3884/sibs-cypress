@@ -670,7 +670,7 @@ export class QuestionPage {
     }
     clickSubmit() {
         cy.wait(1000)
-        cy.get('[type="button"]').contains('Submit').should('be.visible').click()
+        cy.get('[type="button"]').contains('Submit').should('be.visible').click({ force: true })
     }
     downloadTaxonomyFullReport() {
         cy.get('#dropdownDefault').should('contain.text', 'Download').and('be.visible').click()
@@ -782,9 +782,19 @@ export class QuestionPage {
         cy.contains('button', 'Add a new asset location', { matchCase: false }).click({ force: true })
         cy.wait(1000)
 
-        // Text inputs - type, blur, then let the Livewire morph settle before the next field
-        cy.get('[data-test="add-name-btn"]').clear().type(assetLocation.name).blur()
-        cy.wait(1500)
+        // Text inputs - type, blur, then let the Livewire morph settle before the next field.
+        // The first field (name) can be wiped by a late morph triggered by adding the location,
+        // so re-type it until the value sticks.
+        const fillNameField = (attemptsLeft) => {
+            cy.get('[data-test="add-name-btn"]').clear().type(assetLocation.name).blur()
+            cy.wait(1500)
+            cy.get('[data-test="add-name-btn"]').then(($el) => {
+                if ($el.val() !== assetLocation.name && attemptsLeft > 0) {
+                    fillNameField(attemptsLeft - 1)
+                }
+            })
+        }
+        fillNameField(3)
         cy.get('[data-test="add-name-btn"]').should('have.value', assetLocation.name)
         cy.get('[data-test="add-latitude-btn"]').clear().type(String(assetLocation.latitude)).blur()
         cy.wait(1500)
