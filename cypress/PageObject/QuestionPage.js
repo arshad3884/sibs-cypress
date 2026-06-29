@@ -16,6 +16,19 @@ export class QuestionPage {
         cy.get('[x-show="show && showActiveComponent"] .btn-secondary').should('be.visible').and('contain.text', 'Submit').click()
         cy.wait(5000)
     }
+    reOpenQuestionnaire() {
+        cy.contains('button[modal="questionnaires.stages.navigation.reopen"]', 'Re open').should('be.visible').click()
+        cy.wait(1000)
+        // Wait for modal to appear, then operate within it
+        cy.get('#modal-container').should('be.visible').within(() => {
+            // Title h3 also contains the close-button node, so use contain.text (not have.text)
+            cy.get('#modal-headline').should('be.visible').and('contain.text', 'Re open your questionnaire')
+            cy.contains('span', 'Do you want to re open your questionnaire?').should('be.visible')
+            // Confirm button carries wire:click="reopen"
+            cy.get('button[wire\\:click="reopen"]').should('be.visible').and('contain.text', 'Confirm').click()
+        })
+        cy.wait(2000)
+    }
     refreshAndConfirmSubmission(questionName) {
         cy.get('.w-full > .text-esg5').should('be.visible').and('contain.text', questionName)
         cy.get('.w-full.text-center').should('be.visible').and('contain.text', 'We are processing the questionnaire, please wait a few seconds and refresh the page')
@@ -37,10 +50,6 @@ export class QuestionPage {
             })
         }
         refreshUntilDone(15)
-
-        if (questionName.includes('GHG Calculator')) {
-            cy.contains('Your questionnaire was submitted!', { timeout: 20000 }).should('be.visible')
-        }
     }
     validateActiveSection(sectionName) {
         cy.get('h2 .text-esg5').contains(sectionName).scrollIntoView().should('be.visible')

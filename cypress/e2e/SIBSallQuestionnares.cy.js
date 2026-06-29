@@ -11,7 +11,7 @@ const companyPage = new CompanyPage()
 const questionPage = new QuestionPage()
 
 describe("SIBS Company Creation and All questions submission", () => {
-  const foundationTest = 'Create a New company and complete Company Registration Questionnaire'
+  const foundationTest = 'TC-001: Create a New company and complete Company Registration Questionnaire'
   let companyName
   let skipRemainingTests = false
 
@@ -69,7 +69,7 @@ describe("SIBS Company Creation and All questions submission", () => {
       companyPage.clickFinish()
     })
   })
-  it('Submit ESG - SIBS v2025 Questionnaire and Generate Report', () => {
+  it('TC-002: Submit ESG - SIBS v2025 Questionnaire and Generate Report', () => {
     let questionName = 'Questionnaire ESG - SIBS v2025'
     homePage.gotoCompanies()
     companyPage.gotoCompanyList()
@@ -428,7 +428,7 @@ describe("SIBS Company Creation and All questions submission", () => {
     cy.wait(10000)
     questionPage.clickViewReport()
   })
-  it('Submit GHG Calculator V1 Questionnaire', () => {
+  it('TC-003: Submit GHG Calculator V1 Questionnaire', () => {
     let questionName = 'GHG Calculator V1'
     homePage.gotoCompanies()
     companyPage.gotoCompanyList()
@@ -688,9 +688,9 @@ describe("SIBS Company Creation and All questions submission", () => {
     )
     questionPage.submitQuestion()
     questionPage.refreshAndConfirmSubmission(questionName)
-
+    cy.contains('Your questionnaire was submitted!', { timeout: 20000 }).should('be.visible')
   })
-  it('Submit Taxonomy Questionnaire and Download Report', () => {
+  it('TC-004: Submit Taxonomy Questionnaire and Download Report', () => {
     let questionName = 'Taxonomy'
     homePage.gotoCompanies()
     companyPage.gotoCompanyList()
@@ -702,18 +702,6 @@ describe("SIBS Company Creation and All questions submission", () => {
     questionPage.gotoVerifyLink('Specific verification for nuclear energy and fossil gas-related activities')
     questionPage.answerTaxonomyQuestion('A empresa desenvolve atividades relacionadas com energia nuclear ou gás natural?',
       'binary', 'Não')
-    // questionPage.answerTaxonomyQuestion('(Energia nuclear - 4.26) A empresa desenvolve atividades de investigação, desenvolvimento, demonstração e implantação de instalações inovadoras de produção de eletricidade que produzem energia a partir de processos nucleares com um mínimo de resíduos do ciclo do combustível?',
-    //   'binary', 'Sim')
-    // questionPage.answerTaxonomyQuestion('(Energia nuclear - 4.27) A empresa desenvolve construção e o funcionamento seguro de novas instalações nucleares destinadas a produzir eletricidade ou calor industrial, incluindo para fins de aquecimento urbano ou processos industriais, como a produção de hidrogénio, bem como para a melhoria da sua segurança, utilizando as melhores tecnologias disponíveis?',
-    //   'binary', 'Sim')
-    // questionPage.answerTaxonomyQuestion('(Energia nuclear - 4.28) A empresa desenvolve funcionamento seguro de instalações nucleares existentes que produzem eletricidade ou calor industrial, incluindo para fins de aquecimento urbano ou processos industriais, como a produção de hidrogénio a partir de energia nuclear, bem como a melhoria da sua segurança?',
-    //   'binary', 'Sim')
-    // questionPage.answerTaxonomyQuestion('(Gás fóssil - 4.29) A empresa desenvolve construção ou exploração de instalações de produção de eletricidade que produzem eletricidade a partir de combustíveis fósseis gasosos?',
-    //   'binary', 'Sim')
-    // questionPage.answerTaxonomyQuestion('(Gás fóssil - 4.30) A empresa desenvolve construção, renovação ou exploração de instalações de produção combinada de calor/frio e eletricidade que utilizam combustíveis fósseis gasosos?',
-    //   'binary', 'Sim')
-    // questionPage.answerTaxonomyQuestion('(Gás fóssil - 4.31) A empresa desenvolve construção, renovação ou exploração de instalações de produção de calor que produzem calor/frio a partir de combustíveis fósseis gasosos?',
-    //   'binary', 'Sim')
     questionPage.clickComplete()
     questionPage.verifyCompletedSection('Specific verification for nuclear energy and fossil gas-related activities')
     //Step 1: KPI's
@@ -774,7 +762,7 @@ describe("SIBS Company Creation and All questions submission", () => {
     cy.url().should('include', '/questionnaires/taxonomy/report/')
     questionPage.downloadTaxonomyFullReport()
   })
-  it('Submit Physical Risks Questionnaire and Download Report', () => {
+  it('TC-005: Submit Physical Risks Questionnaire and Download Report', () => {
     let questionName = 'Physical Risks'
     homePage.gotoCompanies()
     companyPage.gotoCompanyList()
@@ -807,6 +795,58 @@ describe("SIBS Company Creation and All questions submission", () => {
     questionPage.selectRiskPlan('Tsunami', 'No', 'No')
     questionPage.selectRiskPlan('Water scarcity', 'No', 'No')
     questionPage.selectRiskPlan('Wildfire', 'No', 'No')
+    questionPage.submitQuestion()
+    questionPage.refreshAndConfirmSubmission(questionName)
+    cy.url().should('include', '/report')
+  })
+  it('TC-006: Reopen ESG - SIBS v2025 Questionnaire and submit again to generate Report', () => {
+    let questionName = 'Questionnaire ESG - SIBS v2025'
+    homePage.gotoCompanies()
+    companyPage.gotoCompanyList()
+    companyPage.gotoCompanyDetail(companyName)
+    companyPage.gotoAdditionalInfo()
+    companyPage.openQuestionnaire(questionName)
+    questionPage.reOpenQuestionnaire()
+    questionPage.refreshAndConfirmSubmission(questionName)
+    questionPage.submitQuestion()
+    cy.wait(10000)
+    questionPage.clickViewReport()
+  })
+  it('TC-007: Reopen GHG Calculator V1 Questionnaire and submit again and View report', () => {
+    let questionName = 'GHG Calculator V1'
+    homePage.gotoCompanies()
+    companyPage.gotoCompanyList()
+    companyPage.gotoCompanyDetail(companyName)
+    companyPage.gotoAdditionalInfo()
+    companyPage.openQuestionnaire(questionName)
+    questionPage.reOpenQuestionnaire()
+    questionPage.refreshAndConfirmSubmission(questionName)
+    questionPage.submitQuestion()
+    questionPage.clickViewReport()
+  })
+  it('TC-008: Reopen Taxonomy Questionnaire and submit and Download Report', () => {
+    let questionName = 'Taxonomy'
+    homePage.gotoCompanies()
+    companyPage.gotoCompanyList()
+    companyPage.gotoCompanyDetail(companyName)
+    companyPage.gotoAdditionalInfo()
+    companyPage.openQuestionnaire(questionName)
+    questionPage.reOpenQuestionnaire()
+    cy.wait(7000)
+    cy.reload()
+    questionPage.submitQuestion()
+    cy.url().should('include', '/questionnaires/taxonomy/report/')
+    questionPage.downloadTaxonomyFullReport()
+  })
+  it('TC-009: Reopen Physical Risks Questionnaire and submit and Download Report', () => {
+    let questionName = 'Physical Risks'
+    homePage.gotoCompanies()
+    companyPage.gotoCompanyList()
+    companyPage.gotoCompanyDetail(companyName)
+    companyPage.gotoAdditionalInfo()
+    companyPage.openQuestionnaire(questionName)
+    questionPage.reOpenQuestionnaire()
+    questionPage.refreshAndConfirmSubmission(questionName)
     questionPage.submitQuestion()
     questionPage.refreshAndConfirmSubmission(questionName)
     cy.url().should('include', '/report')
