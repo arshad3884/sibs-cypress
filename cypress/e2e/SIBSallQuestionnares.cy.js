@@ -428,7 +428,7 @@ describe("SIBS Company Creation and All questions submission", () => {
     cy.wait(10000)
     questionPage.clickViewReport()
   })
-  it('TC-003: Submit GHG Calculator V1 Questionnaire', () => {
+  it('TC-003: Submit GHG Calculator V1 Questionnaire and View Report', () => {
     let questionName = 'GHG Calculator V1'
     homePage.gotoCompanies()
     companyPage.gotoCompanyList()

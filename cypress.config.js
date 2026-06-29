@@ -14,7 +14,10 @@ module.exports = defineConfig({
   },
   e2e: {
     setupNodeEvents(on, config) {
-      // implement node event listeners here
+      // Generates the merged HTML report (cypress/reports/html/index.html) after each run.
+      // Without this the reporter only writes raw JSON and no HTML is produced/uploaded.
+      require('cypress-mochawesome-reporter/plugin')(on);
+      return config;
     },
     baseUrl: TENANT_URL,
     boUrl: MAIN_BO_URL,
