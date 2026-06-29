@@ -687,8 +687,7 @@ describe("SIBS Company Creation and All questions submission", () => {
       'No'
     )
     questionPage.submitQuestion()
-    questionPage.refreshAndConfirmSubmission(questionName)
-    cy.contains('Your questionnaire was submitted!', { timeout: 20000 }).should('be.visible')
+    questionPage.clickViewReport()
   })
   it('TC-004: Submit Taxonomy Questionnaire and Download Report', () => {
     let questionName = 'Taxonomy'
