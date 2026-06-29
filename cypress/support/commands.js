@@ -20,6 +20,21 @@
 // -- This is a dual command --
 // Cypress.Commands.add('dismiss', { prevSubject: 'optional'}, (subject, options) => { ... })
 //
-//
-// -- This will overwrite an existing command --
-// Cypress.Commands.overwrite('visit', (originalFn, url, options) => { ... })
+Cypress.Commands.add('verifyToast', (message, type = 'success') => {
+    cy.get('#toast-top-right', { timeout: 10000 })
+        .should('exist')
+        .and('be.visible')
+        .and('have.class', '!block')
+        .and('have.class', `bg-${type}`)
+        .and('have.class', `border-${type}`)
+        .and('have.class', `text-${type}-text`)
+        .and('contain.text', message);
+
+    cy.get('#toast-top-right', { timeout: 15000 })
+        .should('exist')
+        .and('not.be.visible')
+        .and('have.class', '!hidden');
+})
+Cypress.Commands.add('waitForLoader', () => {
+    cy.get('.loader-v2').should('not.be.visible') //loader should be disappear
+})

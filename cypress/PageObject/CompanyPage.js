@@ -164,9 +164,10 @@ export class CompanyPage {
                 .should('be.visible')
                 .click({ force: true });
 
-            getInput()
-                .clear({ force: true })
-                .type(option, { force: true });
+            // Break the chain: clear() triggers a TomSelect/Livewire re-render that detaches
+            // the input, so re-query before type() instead of chaining off the stale subject.
+            getInput().clear({ force: true });
+            getInput().type(option, { force: true });
 
             cy.wait(1500);
 
@@ -202,6 +203,7 @@ export class CompanyPage {
     }
     clickFinish() {
         cy.get('button.bg-esg5.text-white').contains('Finish').should('be.visible').click()
+        cy.wait(5000)
     }
     fillCompanyRegistrationQuestionnaire() {
         cy.get('a[href*="/questionnaires"]').contains('Questionnaire: Company Registration Questionnaire -v2025').should('be.visible')
@@ -237,24 +239,73 @@ export class CompanyPage {
         questionPage.answerQuestion("Does the company monitor its Scope 1, 2 and 3 greenhouse gas emissions?", 'radio', 'No'); // if we set No, GHG calculator will be be enabled 
         cy.get('[id="company-btn-move"]').should('be.visible').and('contain.text', 'Next').click()
     }
+    ensureQuestionnaireRow(questionName, attemptsLeft = 3) {
+        // The questionnaire row can take a moment to appear after the previous one is finished.
+        // If it's not in the table yet, reload, re-open the Additional Info tab, and retry.
+        cy.get('body').then(($body) => {
+            if ($body.find(`tr:contains("${questionName}")`).length || attemptsLeft <= 0) {
+                return;
+            }
+            cy.reload();
+            cy.wait(4000);
+            cy.get('button[id="indicatorPanelTabButton__additional-info"]').should('be.visible').click();
+            cy.get('.company-show-extra-info.bg-white').should('be.visible');
+            this.ensureQuestionnaireRow(questionName, attemptsLeft - 1);
+        });
+    }
     openQuestionnaire(questionName) {
-        cy.contains('tr', questionName)
-            .should('be.visible')
-            .within(() => {
-                cy.get('a[href*="/questionnaires/"]')
-                    .filter(':visible')
-                    .first()
-                    .click({ force: true });
-            })
-
-        cy.url().should('include', '/questionnaires/')
-        cy.contains('.grid.content-start .text-esg5', questionName).should('be.visible')
-        //If modal appears
-        cy.wait(3000)
-        cy.get('.p-6').if().then(() => {
-            cy.get('.p-6').should('be.visible').and('contain.text', 'Welcome! You’re at the start of our questionnaire and we’re glad to have you here!')
-            cy.get('a[text="Start Now!"]').should('be.visible').click()
+        this.ensureQuestionnaireRow(questionName)
+        cy.contains('tr', questionName).should('be.visible').within(() => {
+            cy.get('a[href*="/questionnaires/"]')
+                .filter(':visible')
+                .first()
+                .click({ force: true });
         })
 
+        cy.url().should('include', '/questionnaires/').wait(2000)
+        cy.get('[aria-label="Breadcrumb"]').contains(questionName).should('be.visible')
+        cy.wait(3000)
+
+        // Welcome modal (Livewire UI `#modal-container`) — only on first open when welcomepage_enable is set
+        if (
+            questionName.includes('ESG - SIBS') ||
+            questionName.includes('GHG Calculator') ||
+            questionName.includes('Physical Risks')
+        ) {
+            cy.get('#modal-container')
+                .if('visible')
+                .within(() => {
+                    cy.contains('h1', 'at the start of our questionnaire').should('be.visible')
+                    cy.contains('a', 'Start Now!').click()
+                })
+            cy.wait(2000)
+        }
+
+        // Taxonomy welcome screen (inline, not the Livewire modal)
+        if (questionName == 'Taxonomy') {
+            cy.contains('.justify-center button[type="button"]', 'Start').if().should('be.visible').and('be.enabled').click().wait(3000)
+        }
+    }
+    deleteCompany(companyName) {
+        cy.get('[id*="_tooltip_company"] a[href*="/companies/"]')
+            .contains(companyName)
+            .parents('.company-list-card')
+            .find('button[modal="companies.modals.delete"]')
+            .scrollIntoView()
+            .should('be.visible')
+            .click({ force: true });
+
+        cy.get('#modal-container').should('be.visible');
+        cy.get('#modal-container #modal-headline').should('be.visible').and('contain.text', 'Delete a company');
+
+        cy.get('#modal-container')
+            .should('contain.text', `You're about to delete company`)
+            .and('contain.text', companyName)
+            .and('contain.text', `and all content related to it.`)
+            .and('contain.text', `Be advised that deleted items are stored in the system database`);
+
+        cy.get('#modal-container .btn-cancel').should('be.visible').and('contain.text', 'Cancel');
+        cy.get('#modal-container .btn-danger').should('be.visible').and('contain.text', 'Delete').click({ force: true });
+        cy.verifyToast('Company deleted successfully')
     }
 }

@@ -54,7 +54,7 @@ jobs:
         with:
           browser: chrome
           headed: true
-          spec: cypress/e2e/CompanyCreation.cy.js
+          spec: cypress/e2e/SIBSallQuestionnares.cy.js
 
       - name: Uploading artifact
         uses: actions/upload-artifact@v4
