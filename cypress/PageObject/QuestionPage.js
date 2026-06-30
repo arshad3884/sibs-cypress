@@ -9,7 +9,7 @@ export class QuestionPage {
             .contains('Submit')
             .should('be.visible')
             .and('be.enabled')
-            .click() //Submit
+            .click({ force: true }) //Submit
         //modal
         cy.get('[x-show="show && showActiveComponent"] h3[id="modal-headline"]').should('be.visible').and('contain.text', 'Finish your questionnaire')
         cy.get('[x-show="show && showActiveComponent"] .pt-6').should('be.visible').and('contain.text', 'Are you sure you want to finish your questionnaire?')
@@ -559,18 +559,46 @@ export class QuestionPage {
         // the Livewire re-render. Instead set the value directly through the TomSelect instance
         // (stored on the native <select> as `.tomselect`): look up the option by its label and call
         // setValue(id), which fires TomSelect's onChange -> wire:model.live. No dropdown needed.
-        cy.get('select[data-property-id="activity"]')
-            .siblings('.ts-wrapper')
-            .filter(':visible')
-            .first()
-            .prev('select[data-property-id="activity"]')
-            .then(($select) => {
-                const ts = $select[0].tomselect;
-                const wanted = taxonomyActivity.replace(/\s+/g, ' ').trim().toLowerCase();
+        //
+        // IMPORTANT: choosing the sector triggers a Livewire `/livewire/update` that re-renders the
+        // activity control and re-initialises TomSelect with the new sector's options. That morph is
+        // async and its timing varies, so we must NOT read the options in a single-shot `.then()`
+        // (which is what made this break: it read `ts.options` before the new options were loaded and
+        // failed with "expected undefined to exist"). We retry with `.should()` until the *visible*
+        // activity control's TomSelect actually contains the wanted option, then set it.
+        const wantedActivity = taxonomyActivity.replace(/\s+/g, ' ').trim().toLowerCase();
+
+        // Pick the activity <select> whose adjacent `.ts-wrapper` is currently visible (the open
+        // "Add activity" form), is wired to a live TomSelect instance, and whose options are loaded.
+        const findActivityMatch = ($selects) => {
+            for (const select of [...$selects]) {
+                const wrapper = select.nextElementSibling;
+                const isVisibleWrapper =
+                    wrapper &&
+                    wrapper.classList.contains('ts-wrapper') &&
+                    wrapper.offsetParent !== null;
+                const ts = select.tomselect;
+                if (!isVisibleWrapper || !ts) continue;
+
                 const match = Object.values(ts.options).find(
-                    (o) => (o.title || '').replace(/\s+/g, ' ').trim().toLowerCase().includes(wanted)
+                    (o) => (o.title || '').replace(/\s+/g, ' ').trim().toLowerCase().includes(wantedActivity)
                 );
-                expect(match, `taxonomy activity option "${taxonomyActivity}"`).to.exist;
+                if (match) return { ts, match };
+            }
+            return null;
+        };
+
+        cy.get('select[data-property-id="activity"]')
+            .should(($selects) => {
+                // Retries (re-querying fresh DOM each attempt) until the morph settles and the
+                // option exists on the visible control's TomSelect instance.
+                expect(
+                    findActivityMatch($selects),
+                    `taxonomy activity option "${taxonomyActivity}" loaded on visible control`
+                ).to.not.be.null;
+            })
+            .then(($selects) => {
+                const { ts, match } = findActivityMatch($selects);
                 ts.setValue(String(match[ts.settings.valueField] ?? match.id));
             });
 
